@@ -1,0 +1,3 @@
+/Users/emu/Desktop/Documents/Progrmierung/metal/barnesHut/CMakeFiles/barnesHut.dir
+/Users/emu/Desktop/Documents/Progrmierung/metal/barnesHut/CMakeFiles/edit_cache.dir
+/Users/emu/Desktop/Documents/Progrmierung/metal/barnesHut/CMakeFiles/rebuild_cache.dir
