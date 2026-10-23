@@ -135,12 +135,6 @@ Buffer<C>::getPointer(size_type i) noexcept
     auto it = mContainer.begin();
     std::advance(it, i);
 
-    size_type idx = it->parendId();
-
-    if (idx & id_type::DeletedBit) {
-        return nullptr;
-    }
-
     return &*it;
 }
 
@@ -159,11 +153,6 @@ Buffer<C>::getPointer(size_type i) const noexcept
     auto idx = it->parendId();
 
     std::advance(it, i);
-
-    if (idx & id_type::DeletedBit) 
-    {
-        return nullptr;
-    }
 
     return &*it;
 }

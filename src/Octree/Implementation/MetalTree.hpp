@@ -20,10 +20,8 @@ template<
     class T,
     class TT
 >
-class MetalTree
+struct MetalTree
 {
-public:
-
     /// @brief Type used to represent tree identifiers.
     using id_type = TreeID<int>;
 

@@ -1,35 +1,54 @@
-#include "Octree/Implementation/MetalBuffer.hpp"
-#include "Octree/Implementation/Nodes/BaseBranch.hpp"
 
-#include <Metal/Metal.hpp>
-#include <Foundation/Foundation.hpp>
+#include "SimulatorV0.h"
+
+#include <chrono>
+#include <iostream>
+#include <ratio>
+#include <simd/quaternion.h>
+#include <simd/simd.h>
+#include <simd/vector_types.h>
 
 
-using namespace std;
-using namespace Octree;
-using namespace Implementation;
-using branch_type = Nodes::BaseBranch<double, TreeID<int> >;
+int main(void) {
 
-int main(int argc, char** argv)
-{
-    MTL::Device* device = MTL::CreateSystemDefaultDevice();
-    MTL::CommandQueue* queue = device->newCommandQueue();
-    branch_type branch;
-    MetalBuffer<branch_type> buffer(device, queue, 1024);
+    SimulatorV0 simul;
+    using namespace simd;
 
-    for(int i=0; i< 1024;++i)
+    auto start = std::chrono::steady_clock::now();
+    simul.init();
+    auto end   = std::chrono::steady_clock::now();
+    auto initDuration = std::chrono::duration<double, std::micro>(end - start).count() * 1e-6;
+    //printf("init   Duration: %9.5lfs\n", initDuration);
+
+    start = std::chrono::steady_clock::now();
+    simul.calculateAcceleration(simul.mTree);
+    end   = std::chrono::steady_clock::now();
+    auto treeDuration = std::chrono::duration<double, std::micro>(end - start).count() * 1e-6;
+    //printf("aTree: duration: %9.5lfs\n", treeDuration);
+
+    simul.printSnapShot();
+    start = std::chrono::steady_clock::now();
+    for (int i = 0; i < 100; ++i) 
     {
-        buffer[i].value() = i;
-    }
-    
-    auto b = buffer;
-
-    for(int i= 0; i< 1024; ++ i){
-        printf("%d\t %lf\n", i, b[i].value());
+        //simul.printSnapShot();
+        simul.aniling();
+        simul.updateTree(simul.mTree);
+        simul.calculateAcceleration(simul.mTree);
     }
 
-    queue->release();
-    device->release();
+    simul.mDt *= 0.5;
+ 
+    for (int i = 100; i < 100000; ++i) 
+    {
+        start = std::chrono::steady_clock::now();
+        if ( (i % 500) == 0) 
+        {
+            simul.printSnapShot();
+        }
+        simul.step();
+        end   = std::chrono::steady_clock::now();
+        std::cerr << "step" << i << "step duration:" << std::chrono::duration<double, std::micro>(end - start).count() * 1e-6 << std::endl;
+    }
 
     return 0;
 }

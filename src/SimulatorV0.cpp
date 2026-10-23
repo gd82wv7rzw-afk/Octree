@@ -7,7 +7,6 @@
 #include <random>
 #include <simd/simd.h>
 #include <cmath>
-#include <simd/vector_types.h>
 #include <utility>
 #include <omp.h>
 
@@ -20,7 +19,8 @@ namespace
         float3 center{0.5f*length, 0.5f*length, 0.5f*length};
         float3 offset{0.f, 0.f, 0.f}; 
         float  with = 0.5f * length; 
-        char   oct  = (atom.pos.x >= center.x) | (atom.pos.y >= center.y) << 1 | (atom.pos.z >= center.z) << 2;
+
+        char   oct  = (atom.pos[0] >= center[0]) | (atom.pos[1] >= center[1]) << 1 | (atom.pos[2] >= center[2]) << 2;
 
         auto sub = tree.root();
 

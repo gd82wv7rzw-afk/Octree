@@ -249,13 +249,6 @@ MetalBuffer<T>::getPointer(size_type i) noexcept
 
     auto ret = data() + i;
 
-    size_type idx = ret->parendId();
-
-    if (idx & id_type::DeletedBit) 
-    {
-        return nullptr;
-    }
-
     return ret;
 }
 //----------------------------------------------------------------------------------------------------------------------
@@ -270,13 +263,6 @@ MetalBuffer<T>::getPointer(size_type i) const noexcept
     }
 
     auto ret = data() + i;
-
-    size_type idx = ret->parendId();
-
-    if (idx & id_type::DeletedBit) 
-    {
-        return nullptr;
-    }
 
     return ret;
 }
