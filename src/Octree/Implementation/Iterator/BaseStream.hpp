@@ -5,159 +5,140 @@
 
 namespace Octree::Implementation::Iterator {
 
-/**
- * @brief Provides the common functionality for tree iterators.
- *
- * BaseStream stores a reference to a tree and the index of the
- * current branch. It provides navigation through the tree hierarchy.
- *
- * @tparam Tree The tree type traversed by this stream.
- */
+/// @brief Provides the common functionality for tree iterators.
+///
+/// BaseStream stores a reference to a tree and the index of the
+/// current branch. It provides navigation through the tree hierarchy.
+///
+/// @tparam Tree The tree type traversed by this stream.
 template<class Tree>
-class BaseStream
-    : public References::BaseReference<
-          typename Traits::TreeTraits<Tree>::branch_type>
+class BaseStream: public References::BaseReference<typename Traits::TreeTraits<Tree>::branch_type>
 {
     friend Tree;
 
-protected:
-    using tree_type = Traits::TreeTraits<Tree>;
-    using base_type = References::BaseReference<typename tree_type::branch_type>;
-    using id_type = Tree::id_type;
+    protected:
+        
+        using tree_type = Traits::TreeTraits<Tree>;
+        using base_type = References::BaseReference<typename tree_type::branch_type>;
+        using id_type = Tree::id_type;
+ 
+        using base_type::data;
+        using base_type::isConst;
+ 
+        using reference = Tree::reference;
+        using const_reference = Tree::const_reference;
+        //--------------------------------------------------------------------------------------------------------------
 
-    using base_type::data;
-    using base_type::isConst;
+    public:
+    
+        using size_type = typename id_type::size_type;
+        using difference_type = typename id_type::difference_type;
+        //--------------------------------------------------------------------------------------------------------------
 
-    using reference = Tree::reference;
-    using const_reference = Tree::const_reference;
+        /// @brief Constructs a stream for the specified tree and branch.
+        /// @param tree Pointer to the tree.
+        /// @param index Index of the initial branch.
+        constexpr BaseStream(Tree* tree = nullptr, size_type index = 0) noexcept;
+        //--------------------------------------------------------------------------------------------------------------
 
-public:
-    using size_type = typename id_type::size_type;
-    using difference_type = typename id_type::difference_type;
+        /// @brief Returns a reference to the current branch.
+        /// @return A const reference to the current branch.
+        auto operator*() const noexcept                                        
+        {
+            return const_reference(mTree, mIndex); 
+        }
+        //--------------------------------------------------------------------------------------------------------------
 
-    /**
-     * @brief Constructs a stream for the specified tree and branch.
-     *
-     * @param tree Pointer to the tree.
-     * @param index Index of the initial branch.
-     */
-    constexpr BaseStream(Tree* tree = nullptr, size_type index = 0) noexcept;
+        /// @brief Returns a mutable reference to the current branch.
+        /// @return A reference to the current branch.
+        auto operator*() noexcept requires (!isConst) 
+        {
+            return reference(mTree, mIndex);
+        }
+        //--------------------------------------------------------------------------------------------------------------
 
-    /**
-     * @brief Returns a reference to the current branch.
-     *
-     * @return A const reference to the current branch.
-     */
-    auto operator*() const noexcept
-    {
-        return const_reference(mTree, mIndex);
-    }
+        /// @brief Returns a pointer to the current branch.
+        /// @return Pointer to the current branch data.
+        constexpr auto* operator->() const noexcept
+        {
+            return data();
+        }
+        //--------------------------------------------------------------------------------------------------------------
 
-    /**
-     * @brief Returns a mutable reference to the current branch.
-     *
-     * @return A reference to the current branch.
-     */
-    auto operator*() noexcept requires (!isConst)
-    {
-        return reference(mTree, mIndex);
-    }
+        /// @brief Provides const pointer-like access to the current branch. 
+        /// @return Pointer to the current branch data.
+        constexpr auto* operator->() noexcept requires (!isConst)
+        {
+            return data();
+        }
+        //--------------------------------------------------------------------------------------------------------------
 
-    /**
-     * @brief Provides pointer-like access to the current branch.
-     *
-     * @return Pointer to the current branch data.
-     */
-    auto* operator->() const noexcept
-    {
-        return data();
-    }
+        /// @brief  Returns the index of the current branch.
+        /// @return the index
+        size_type index() const
+        {
+            return mIndex;
+        }
+        //--------------------------------------------------------------------------------------------------------------
 
-    /**
-     * @brief Provides mutable pointer-like access to the current branch.
-     *
-     * @return Pointer to the current branch data.
-     */
-    auto* operator->() noexcept requires (!isConst)
-    {
-        return data();
-    }
+        /// @brief Advances the stream to the next position.
+        BaseStream& operator++() noexcept;
+        //--------------------------------------------------------------------------------------------------------------
+ 
+        /// @brief Advances the stream and returns its previous state.
+        BaseStream operator++(int) noexcept
+        {
+            auto t = *this;
+            ++(*this);
+            return t;
+        }
+        //--------------------------------------------------------------------------------------------------------------
+ 
+        /// @brief Moves the stream to the previous position.
+        BaseStream& operator--() noexcept;
+        //--------------------------------------------------------------------------------------------------------------
+ 
+        /// @brief Moves the stream backward and returns its previous state.
+        BaseStream operator--(int) noexcept
+        {
+            auto t = *this;
+            --(*this);
+            return t;
+        }
+        //--------------------------------------------------------------------------------------------------------------
 
-    /**
-     * @brief Returns the index of the current branch.
-     */
-    size_type index() const
-    {
-        return mIndex;
-    }
+        /// @brief Moves the stream to the parent branch.
+        BaseStream& goUp() noexcept;
+        //--------------------------------------------------------------------------------------------------------------
 
-    /**
-     * @brief Advances the stream to the next position.
-     */
-    BaseStream& operator++() noexcept;
+        /// @brief Moves the stream to the deepest descendant branch.
+        BaseStream& goToDeapestPossition() noexcept;
+        //--------------------------------------------------------------------------------------------------------------
 
-    /**
-     * @brief Advances the stream and returns its previous state.
-     */
-    BaseStream operator++(int) noexcept
-    {
-        auto t = *this;
-        ++(*this);
-        return t;
-    }
+    protected:
+        
+        /// @brief Returns a pointer to the branch at the specified index.
+        /// @param i Index of the branch.
+        /// @return Pointer to the requested branch.
+        constexpr auto* branch(size_type i) const noexcept
+        {
+            return mTree->branches()->getPointer(i);
+        }
+        //--------------------------------------------------------------------------------------------------------------
 
-    /**
-     * @brief Moves the stream to the previous position.
-     */
-    BaseStream& operator--() noexcept;
+        /// @brief Returns a mutable pointer to the branch at the specified index.
+        /// @param i Index of the branch.
+        /// @return Pointer to the requested branch.
+        constexpr auto* branch(size_type i) noexcept
+        {
+            return mTree->branches()->getPointer(i);
+        }
+       //--------------------------------------------------------------------------------------------------------------
 
-    /**
-     * @brief Moves the stream backward and returns its previous state.
-     */
-    BaseStream operator--(int) noexcept
-    {
-        auto t = *this;
-        --(*this);
-        return t;
-    }
-
-    /**
-     * @brief Moves the stream to the parent branch.
-     */
-    BaseStream& goUp() noexcept;
-
-    /**
-     * @brief Moves the stream to the deepest descendant branch.
-     */
-    BaseStream& goToDeapestPossition() noexcept;
-
-protected:
-    /**
-     * @brief Returns a pointer to the branch at the specified index.
-     *
-     * @param i Index of the branch.
-     * @return Pointer to the requested branch.
-     */
-    constexpr auto* branch(size_type i) const noexcept
-    {
-        return mTree->branches()->getPointer(i);
-    }
-
-    /**
-     * @brief Returns a mutable pointer to the branch at the specified index.
-     *
-     * @param i Index of the branch.
-     * @return Pointer to the requested branch.
-     */
-    constexpr auto* branch(size_type i) noexcept
-    {
-        return mTree->branches()->getPointer(i);
-    }
-
-    Tree* mTree{nullptr};
-    size_type mIndex{0};
+        Tree* mTree{nullptr};
+        size_type mIndex{0};
+       //--------------------------------------------------------------------------------------------------------------
 };
-
 //----------------------------------------------------------------------------------------------------------------------
 
 template<class Tree>
@@ -169,12 +150,8 @@ constexpr BaseStream<Tree>::BaseStream(Tree* tree, size_type index) noexcept
     if (tree != nullptr)
         base_type::operator=(branch(index));
 }
-
 //----------------------------------------------------------------------------------------------------------------------
 
-/**
- * @brief Advances the stream to the next branch in traversal order.
- */
 template<class Tree>
 BaseStream<Tree>&
 BaseStream<Tree>::operator++() noexcept
@@ -201,12 +178,8 @@ BaseStream<Tree>::operator++() noexcept
 
     return *this;
 }
-
 //----------------------------------------------------------------------------------------------------------------------
 
-/**
- * @brief Moves the stream to the previous branch in traversal order.
- */
 template<class Tree>
 BaseStream<Tree>&
 BaseStream<Tree>::operator--() noexcept
@@ -233,12 +206,8 @@ BaseStream<Tree>::operator--() noexcept
 
     return *this;
 }
-
 //----------------------------------------------------------------------------------------------------------------------
 
-/**
- * @brief Moves the stream to the parent branch.
- */
 template<class Tree>
 BaseStream<Tree>&
 BaseStream<Tree>::goUp() noexcept
@@ -251,12 +220,8 @@ BaseStream<Tree>::goUp() noexcept
 
     return *this;
 }
-
 //----------------------------------------------------------------------------------------------------------------------
 
-/**
- * @brief Moves the stream to the deepest descendant branch.
- */
 template<class Tree>
 BaseStream<Tree>&
 BaseStream<Tree>::goToDeapestPossition() noexcept
@@ -279,7 +244,6 @@ BaseStream<Tree>::goToDeapestPossition() noexcept
 
     return *this;
 }
-
 //----------------------------------------------------------------------------------------------------------------------
 
 } // namespace Octree::Implementation::Iterator
