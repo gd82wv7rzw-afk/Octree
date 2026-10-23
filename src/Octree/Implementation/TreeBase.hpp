@@ -41,17 +41,14 @@ public:
     using branch_type = Nodes::BaseBranch<TT, id_type>;
 
     /// @brief Buffer type used to store branch nodes.
-    using branchBuffer_type =
-        Buffer<Container<branch_type, Allocator<branch_type>>>;
+    using branchBuffer_type = Buffer<Container<branch_type, Allocator<branch_type>>>;
 
     /// @brief Type representing a leaf node.
     using leaf_type = Nodes::BaseNode<T, id_type>;
 
     /// @brief Buffer type used to store leaf nodes.
-    using leafBuffer_type =
-        Buffer<Container<leaf_type, Allocator<leaf_type>>>;
-
-    //--------------------------------------------------------------------------------------------------
+    using leafBuffer_type = Buffer<Container<leaf_type, Allocator<leaf_type>>>;
+    //------------------------------------------------------------------------------------------------------------------
 
     /// @brief Type representing the underlying tree structure.
     using tree_type = Nodes::BaseTree<leafBuffer_type, branchBuffer_type>;
@@ -61,8 +58,7 @@ public:
 
     /// @brief Type used to represent differences between indices.
     using difference_type = id_type::difference_type;
-
-    //--------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------------------
 };
 
 } // namespace Octree::Implementation

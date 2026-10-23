@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Octree/Implementation/TreeBase.hpp"
+#include "Octree/Implementation/MetalTree.hpp"
+
 #include <vector>
 #include <memory>
 
@@ -22,5 +24,10 @@ namespace Octree {
         template<class>         class Allocator = std::allocator
     > 
     using Tree = typename Octree::Implementation::TreeBase<T, TT, ST, Container, Allocator>::tree_type;
+    //------------------------------------------------------------------------------------------------------------------
+
+    /// @brief A generic Octree data structure on the GPU.
+    template<class T, class TT = T>
+    using MetalTree = Implementation::MetalTree<T, TT>;
 
 } // namespace Octree
