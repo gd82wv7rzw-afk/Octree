@@ -46,7 +46,6 @@ public:
 
     /// @brief Const pointer to a stored element.
     using const_pointer = container_type::const_pointer;
-
     //--------------------------------------------------------------------------------------------------
 
     /// @brief Returns a pointer to the element at the specified index.
@@ -55,6 +54,7 @@ public:
     /// @return Pointer to the element, or nullptr if the index is invalid
     ///         or the element has been deleted.
     constexpr pointer getPointer(size_type i) noexcept;
+    //--------------------------------------------------------------------------------------------------
 
     /// @brief Returns a const pointer to the element at the specified index.
     ///
@@ -62,7 +62,6 @@ public:
     /// @return Const pointer to the element, or nullptr if the index is
     ///         invalid or the element has been deleted.
     constexpr const_pointer getPointer(size_type i) const noexcept;
-
     //--------------------------------------------------------------------------------------------------
 
     /// @brief Provides indexed access to an element.
@@ -73,6 +72,7 @@ public:
     {
         return *getPointer(i);
     }
+    //--------------------------------------------------------------------------------------------------
 
     /// @brief Provides const indexed access to an element.
     ///
@@ -82,7 +82,6 @@ public:
     {
         return *getPointer(i);
     }
-
     //--------------------------------------------------------------------------------------------------
 
     /// @brief Returns the next available insertion index.
@@ -97,21 +96,16 @@ public:
             ? mContainer.size()
             : mNextIndex;
     }
-
     //--------------------------------------------------------------------------------------------------
 
     /// @brief Inserts an element into the buffer.
-    ///
     /// Appends the element if no deleted entries are available; otherwise,
     /// reuses the first entry in the free list.
-    ///
     /// @param x Element to insert.
     void push_back(const_reference x) noexcept;
-
     //--------------------------------------------------------------------------------------------------
 
     /// @brief Marks an element as deleted and adds it to the free list.
-    ///
     /// @param i Index of the element to delete.
     constexpr void deleate(size_type i) noexcept;
 
@@ -122,7 +116,6 @@ private:
 
     /// @brief Index of the first deleted entry, or IndexMask if none exist.
     size_type mNextIndex{id_type::IndexMask};
-
     //--------------------------------------------------------------------------------------------------
 };
 
@@ -142,7 +135,7 @@ Buffer<C>::getPointer(size_type i) noexcept
     auto it = mContainer.begin();
     std::advance(it, i);
 
-    size_type idx = it->parendId() & id_type::IndexMask;
+    size_type idx = it->parendId();
 
     if (idx & id_type::DeletedBit) {
         return nullptr;
@@ -163,11 +156,12 @@ Buffer<C>::getPointer(size_type i) const noexcept
     }
 
     auto it = mContainer.begin();
-    auto idx = it->parendId() & id_type::IndexMask;
+    auto idx = it->parendId();
 
     std::advance(it, i);
 
-    if (idx & id_type::DeletedBit) {
+    if (idx & id_type::DeletedBit) 
+    {
         return nullptr;
     }
 
@@ -192,7 +186,6 @@ Buffer<C>::push_back(const_reference x) noexcept
         *p = x;
     }
 }
-
 //--------------------------------------------------------------------------------------------------
 
 /// @brief Marks an element as deleted and adds it to the free list.
@@ -211,7 +204,6 @@ Buffer<C>::deleate(size_type i) noexcept
 
     p->parendId() = id_type::DeletedBit | idx;
 }
-
 //--------------------------------------------------------------------------------------------------
 
 } // namespace Implementation

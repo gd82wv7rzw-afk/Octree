@@ -7,6 +7,9 @@ namespace Octree::Implementation
 {
     template<class C>
     class Buffer;
+
+    template<class T>
+    class MetalBuffer;
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -74,6 +77,9 @@ class BaseNode: public Value<T>
     
         template<class C>
         friend class Implementation::Buffer;
+
+        template<class C>
+        friend class Implementation::MetalBuffer;
 
         template<class Tree>
         friend class References::SubTree;

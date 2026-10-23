@@ -12,7 +12,6 @@ namespace Implementation {
 template<class ST>
 requires std::is_integral_v<ST> && (!std::is_same_v<ST, bool>)
 class TreeID;
-
 //--------------------------------------------------------------------------------------------------
 
 /// @brief Forward declaration of the bit-field type.
@@ -21,7 +20,6 @@ class TreeID;
 template<class ST>
 requires std::is_unsigned_v<ST> && (!std::is_same_v<ST, bool>)
 class BitFeld;
-
 //--------------------------------------------------------------------------------------------------
 
 /// @brief Forward declaration of the buffer type.
@@ -29,7 +27,13 @@ class BitFeld;
 /// @tparam C Underlying container type.
 template<class C>
 class Buffer;
+//--------------------------------------------------------------------------------------------------
 
+/// @brief Forward declaration of the metal buffer type.
+///
+/// @tparam T the data type.
+template<class T>
+class MetalBuffer;
 //--------------------------------------------------------------------------------------------------
 
 /// @brief Checks whether a type provides the required container interface.
@@ -69,7 +73,6 @@ concept container_type = requires
     { constC.begin() } -> std::same_as<typename Container::const_iterator>;
     { constC.end() }   -> std::same_as<typename Container::const_iterator>;
 };
-
 //--------------------------------------------------------------------------------------------------
 
 /// @brief Forward declaration of the tree base class.
@@ -91,7 +94,6 @@ requires
     std::is_integral_v<ST> &&
     (!std::is_same_v<ST, bool>)
 class TreeBase;
-
 //--------------------------------------------------------------------------------------------------
 
 } // namespace Implementation

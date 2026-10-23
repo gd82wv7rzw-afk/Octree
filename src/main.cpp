@@ -24,7 +24,6 @@ int main(int argc, char** argv)
     
     auto b = buffer;
 
-    while(b.isBusy());
 
     for(int i= 0; i< 1024; ++ i){
         printf("%d\t %lf\n", i, b[i].value());
