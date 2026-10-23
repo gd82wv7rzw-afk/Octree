@@ -13,9 +13,24 @@ using branch_type = Nodes::BaseBranch<double, TreeID<int> >;
 int main(int argc, char** argv)
 {
     MTL::Device* device = MTL::CreateSystemDefaultDevice();
+    MTL::CommandQueue* queue = device->newCommandQueue();
     branch_type branch;
-    MetalBuffer<branch_type> buffer(device, 1024);
+    MetalBuffer<branch_type> buffer(device, queue, 1024);
 
+    for(int i=0; i< 1024;++i)
+    {
+        buffer[i].value() = i;
+    }
+    
+    auto b = buffer;
+
+    while(b.isBusy());
+
+    for(int i= 0; i< 1024; ++ i){
+        printf("%d\t %lf\n", i, b[i].value());
+    }
+
+    queue->release();
     device->release();
 
     return 0;
