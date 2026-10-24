@@ -25,7 +25,7 @@ void MetalGravity::generateRandomConfiguration(const simd::float3& box, const in
 
             float3 p{x, y, z};
 
-            if (dot(p,p) < dot(mBox, mBox)) 
+            if (dot(p,p) < dot(mBox, mBox)/4) 
             {
                 point = p;
                 break;

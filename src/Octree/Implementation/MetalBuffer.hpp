@@ -287,10 +287,11 @@ MetalBuffer<T>::allocate(size_type size)
     auto oldSize = mSize;
     mSize = size;
 
-    for (int i = oldSize; i < size; ++i)
+    for (int i = size; i > oldSize; --i)
     {
-        getPointer(i)->parendId() = mNextIndex | id_type::DeletedBit;
-        mNextIndex = i;
+        auto idx = i - 1;
+        getPointer(idx)->parendId() = mNextIndex | id_type::DeletedBit;
+        mNextIndex = idx;
     }
 }
 //----------------------------------------------------------------------------------------------------------------------

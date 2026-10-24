@@ -26,6 +26,7 @@ int main(void) {
 
 //  queue->release();
 //  device->release();
+//  return 0;
 
     SimulatorV0 simul;
     using namespace simd;
