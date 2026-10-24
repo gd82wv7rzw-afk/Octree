@@ -28,6 +28,6 @@ namespace Octree {
 
     /// @brief A generic Octree data structure on the GPU.
     template<class T, class TT = T>
-    using MetalTree = Implementation::MetalTree<T, TT>;
+    using MetalTree = Implementation::MetalTree<T, TT>::tree_type;
 
 } // namespace Octree

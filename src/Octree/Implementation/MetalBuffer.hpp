@@ -20,7 +20,8 @@ class MetalBuffer
 
     public:
 
-        using size_type       = typename id_type::size_type;
+        using size_type       = id_type::size_type;
+        using difference_type = id_type::difference_type;
 
         using value_type      = T;
         using pointer         = T*;
@@ -29,7 +30,7 @@ class MetalBuffer
         using const_reference = const T&;
         //--------------------------------------------------------------------------------------------------------------
 
-        MetalBuffer(MTL::Device* device, MTL::CommandQueue* queue, size_type size);
+        MetalBuffer(MTL::Device* device, MTL::CommandQueue* queue, size_type size = 0);
         MetalBuffer(const MetalBuffer& other);
         MetalBuffer(MetalBuffer&& other);
         MetalBuffer& operator=(const MetalBuffer& other);
@@ -78,17 +79,18 @@ class MetalBuffer
         constexpr void deleate(size_type i) noexcept;
         //--------------------------------------------------------------------------------------------------------------
 
+        void allocate(size_type size);
+        //--------------------------------------------------------------------------------------------------------------
+
     private:
 
         void buildPipelines();
         void copyFrom(MTL::Buffer* other);
-
-        void allocate(size_type size);
         //--------------------------------------------------------------------------------------------------------------
 
         MTL::Buffer* mBuffer{nullptr};
-        MTL::Device* mDevice{nullptr};
-        MTL::CommandQueue* mQueue{nullptr};
+        MTL::Device* mDevice;
+        MTL::CommandQueue* mQueue;
         size_type    mSize{0};
         
         /// @brief Index of the first deleted entry, or IndexMask if none exist.
@@ -118,7 +120,7 @@ MetalBuffer<T>::MetalBuffer(const MetalBuffer& other)
 {
     mBuffer = mDevice->newBuffer(mSize * sizeof(T), MTL::ResourceStorageModeShared);
     buildPipelines();
-    copyFrom(other.mBuffer);
+    if (other.mSize > 0) copyFrom(other.mBuffer);
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -278,17 +280,18 @@ MetalBuffer<T>::allocate(size_type size)
 
     std::swap(mBuffer, tmp);
 
-    copyFrom(tmp);
+    if (mSize > 0) copyFrom(tmp);
 
     tmp->release();
 
-    for (int i = mSize; i < size; ++i)
+    auto oldSize = mSize;
+    mSize = size;
+
+    for (int i = oldSize; i < size; ++i)
     {
         getPointer(i)->parendId() = mNextIndex | id_type::DeletedBit;
         mNextIndex = i;
     }
-
-    mSize = size;
 }
 //----------------------------------------------------------------------------------------------------------------------
 

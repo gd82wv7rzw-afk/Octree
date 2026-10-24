@@ -116,13 +116,16 @@ namespace
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-SimulatorV0::SimulatorV0() : mRng(std::random_device{}())
+SimulatorV0::SimulatorV0() 
+    : mRng(std::random_device{}())
+    , mTree(Tree::branchBuffer_type(), Tree::leafBuffer_type())
+    , mNextTree(mTree)
 {
     mR0   = mLength / cbrt(1.f*mNAtoms) / mFreeLength; 
     mR02  = mR0 * mR0;
     mR013 = mR0 * mR0 * mR0; mR013 *= mR013; mR013 *= mR013; mR013 *= mR0;
     mRoh  = 1.f / mFreeLength / mFreeLength / mFreeLength;
-
+    
     mTmpAtoms.insert(mTmpAtoms.end(), mNAtoms, Atom{float3{0.f,0.f,0.f}, float3{0.f,0.f,0.f}, float3{0.f,0.f,0.f}, float3{0.f,0.f,0.f}, -1});
 }
 //----------------------------------------------------------------------------------------------------------------------
@@ -597,7 +600,7 @@ void SimulatorV0::step()
 
     swap(mTree, mNextTree);  
 
-    mNextTree = Tree{};
+    mNextTree = Tree(Tree::branchBuffer_type(), Tree::leafBuffer_type());
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -668,7 +671,7 @@ void SimulatorV0::aniling()
 
 void SimulatorV0::updateTree(Tree& tree)
 {
-    Tree oldTree;
+    Tree oldTree = Tree(Tree::branchBuffer_type(), Tree::leafBuffer_type());
     std::swap(tree, oldTree);
 
     auto it  = oldTree.root().begin();

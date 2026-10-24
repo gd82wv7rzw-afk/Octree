@@ -28,11 +28,10 @@ class BaseTree
 
         using id_type           = TreeID<typename BranchBuf::size_type>;
         using branch_type       = BranchBuf::value_type;
-        using branchBuffer_type = BranchBuf;
         using leaf_type         = LeafBuf::value_type;
-        using leafBuffer_type   = LeafBuf;
     
     public:    
+
         using size_type         = BranchBuf::size_type;
         using difference_type   = BranchBuf::difference_type;
         using const_iterator    = Iterator::BaseStream<const BaseTree>;
@@ -40,6 +39,12 @@ class BaseTree
 
         using       reference   = References::SubTree<      BaseTree>;
         using const_reference   = References::SubTree<const BaseTree>;
+
+        using branchBuffer_type = BranchBuf;
+        using leafBuffer_type   = LeafBuf;
+        //--------------------------------------------------------------------------------------------------------------
+
+        BaseTree(const BranchBuf& lbranches, const LeafBuf& lleafs): mBranches(lbranches), mLeafs(lleafs)             {}
         //--------------------------------------------------------------------------------------------------------------
 
         constexpr auto begin()       noexcept               { return         iterator(this, 0).goToDeapestPossition(); }
@@ -48,12 +53,13 @@ class BaseTree
         constexpr auto end()   const noexcept               { return ++const_iterator(this, 0);                        }
         //--------------------------------------------------------------------------------------------------------------
 
-        constexpr auto root()       noexcept                                        { return       reference(this, 0); }
-        constexpr auto root() const noexcept                                        { return const_reference(this, 0); }
+        constexpr auto root()       noexcept                                  { return       reference(this, mRootID); }
+        constexpr auto root() const noexcept                                  { return const_reference(this, mRootID); }
         //--------------------------------------------------------------------------------------------------------------
 
-    //private:
-
+        constexpr auto numberOfBranches() const noexcept                                     {return mNumberOfBranches;}
+        //--------------------------------------------------------------------------------------------------------------        
+        
         constexpr auto* branches()       noexcept                                                 { return &mBranches; }
         constexpr auto* branches() const noexcept                                                 { return &mBranches; }
         constexpr auto* leafs()          noexcept                                                 { return &mLeafs;    }
@@ -68,7 +74,8 @@ class BaseTree
 
         BranchBuf mBranches{};
         LeafBuf   mLeafs{};
-        size_type mNumerOfBranches{0};
+        size_type mNumberOfBranches{0};
+        size_type mRootID{id_type::IndexMask};
 };
 //----------------------------------------------------------------------------------------------------------------------
 

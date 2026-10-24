@@ -138,7 +138,7 @@ constexpr SubTree<Tree>::SubTree(TreePtr tree, size_type index) noexcept:
 
     if constexpr (!isConst) 
     {
-        if ( bool(*this) ) 
+        if (mTree->mNumberOfBranches > 0) 
         {
             mNewSubTree = &SubTree::newSubTree_run;
             mNewLeaf    = &SubTree::newLeaf_run;
@@ -175,12 +175,15 @@ SubTree<Tree>::newSubTree_init(size_type i) noexcept requires(!isConst)
     // the first of all branch / subTree
     branch_type newBr; 
     newBr.parendId() = id_type::IndexMask;
+
+    mIndex = buffer()->nextIndex();
     buffer()->push_back(newBr);
 
     // update the internal pointer
     base_type::operator = (branchPtr(mIndex));
 
-    ++mTree->mNumerOfBranches;
+    ++mTree->mNumberOfBranches;
+    mTree->mRootID = mIndex;
 
     // now we are a valid sub tree :-)
     mNewSubTree = &SubTree::newSubTree_run;
@@ -215,7 +218,7 @@ SubTree<Tree>::newSubTree_run(size_type i) noexcept requires(!isConst)
     // update the internal pointer
     base_type::operator = (branchPtr(mIndex));
 
-    ++mTree->mNumerOfBranches;
+    ++mTree->mNumberOfBranches;
 
     return SubTree(mTree, idx);
 }
@@ -357,7 +360,7 @@ SubTree<Tree>::deleate(size_type i) noexcept requires(!isConst)
             ++it;
 
             buffer()->deleate(idx);
-            --mTree->mNumerOfBranches; 
+            --mTree->mNumberOfBranches; 
         }
     }
 

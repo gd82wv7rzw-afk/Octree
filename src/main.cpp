@@ -1,5 +1,6 @@
 
 #include "SimulatorV0.h"
+#include "Simulation/MetalGravity.h"
 
 #include <chrono>
 #include <iostream>
@@ -8,8 +9,23 @@
 #include <simd/simd.h>
 #include <simd/vector_types.h>
 
-
 int main(void) {
+
+//  MTL::Device* device = MTL::CreateSystemDefaultDevice();
+//  MTL::CommandQueue* queue = device->newCommandQueue();
+
+//  Simulation::MetalGravity gravitySim(device, queue);
+//  gravitySim.generateRandomConfiguration({1.f, 1.f, 1.f}, 1e5);
+
+//  printf("%d\n\n", (int)1e5);
+//  for (auto a: gravitySim.tree()->root())
+//  {
+//      auto r = a.value().pos;
+//      printf("Xx %9.5f\t%9.5f\t%9.5f\n", r.x, r.y, r.z);
+//  }
+
+//  queue->release();
+//  device->release();
 
     SimulatorV0 simul;
     using namespace simd;

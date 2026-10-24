@@ -38,6 +38,7 @@ set(APP_SOURCES
     "${SOURCE_DIR}/MetalImplementation.cpp"
     "${SOURCE_DIR}/SimulatorV0.cpp"
     "${SOURCE_DIR}/MetalStuff/Pipeline/PipelineBuilder.cpp"
+    "${SOURCE_DIR}/Simulation/MetalGravity.cpp"
 )
 
 add_executable(${APP_NAME} ${APP_SOURCES})
