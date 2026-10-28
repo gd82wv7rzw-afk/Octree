@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+
+# CMake build directories and generated files
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+build.ninja
+.ninja_deps
+.ninja_log
+cmake_install.cmake
+compile_commands.json
+Makefile
+
+# Compiled artifacts
+*.o
+*.a
+*.dylib
+*.so
+*.exe
+
+# Caches and temporary files
+.cache/
+.cache-*/
+.cache_*/
+.caches/
+*.tmp
+/ThirdParty/
