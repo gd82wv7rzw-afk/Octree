@@ -48,7 +48,9 @@ class MetalGravity
         void updateCenterOfMass(MTL::ComputeCommandEncoder* encoder);
         //--------------------------------------------------------------------------------------------------------------
 
-        void reduceMaxError(MTL::ComputeCommandEncoder* enc);
+        void reduceMaxError(MTL::ComputeCommandEncoder* encoder);
+        void findReinsertAtoms(MTL::ComputeCommandEncoder* encoder);
+        void reinsertAtoms();
         //--------------------------------------------------------------------------------------------------------------
 
         void step();
@@ -74,7 +76,7 @@ class MetalGravity
         //--------------------------------------------------------------------------------------------------------------
 
         /// @brief the barnes hut criteria, if theta > mTheta => go in the node
-        float mTheta{0.7f};
+        float mTheta{0.9f};
         //--------------------------------------------------------------------------------------------------------------
 
         float mDt{1e-2};
@@ -83,10 +85,11 @@ class MetalGravity
         Tree                  mTree;
         Tree::leafBuffer_type mNextAtoms;
         MetalArray<float>     mMaxError;
+        MetalArray<int>       mNeadReinsert;
         std::mt19937          mRandom;
         MTL::Device*          mDevice{nullptr};
         MTL::CommandQueue*    mQueue{nullptr};
-        std::vector<std::vector<uint32_t> > mOrderMap;
+        //std::vector<std::vector<uint32_t> > mOrderMap;
         //--------------------------------------------------------------------------------------------------------------
 
         PipelinePtr mCalculateAcelationPipeline{nullptr};
@@ -95,6 +98,7 @@ class MetalGravity
         PipelinePtr mUpdateCenterOfMassPipeline{nullptr};
         PipelinePtr mReduceMaxErrorPipeline{nullptr};
         PipelinePtr mIntegratteVelosetiesPipeline{nullptr};
+        PipelinePtr mFindReinsertAtomsPipeline{nullptr};
         //--------------------------------------------------------------------------------------------------------------
 };
 //----------------------------------------------------------------------------------------------------------------------

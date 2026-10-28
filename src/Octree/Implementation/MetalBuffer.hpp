@@ -15,7 +15,7 @@ class MetalBuffer
 {
     private:
 
-        using id_type        = TreeID<typename T::size_type>;
+        using id_type        = TreeID<int>;
         //--------------------------------------------------------------------------------------------------------------
 
     public:

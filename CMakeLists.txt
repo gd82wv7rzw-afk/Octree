@@ -118,6 +118,7 @@ set(SHADERS
     src/Simulation/Shader/firstIntegral.metal
     src/Simulation/Shader/updateCenterOfMass.metal
     src/Simulation/Shader/reduseMaxError.metal
+    src/Simulation/Shader/findReinstertAtoms.metal
 )
 
 set(AIR_FILES)

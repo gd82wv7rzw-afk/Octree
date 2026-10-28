@@ -11,6 +11,7 @@ MetalGravity::MetalGravity(MTL::Device* device, MTL::CommandQueue* que, int nAto
     , mTree(Tree::branchBuffer_type(device, que), Tree::leafBuffer_type(device,que))
     , mNextAtoms(device, que)
     , mMaxError(device, nAtoms)
+    , mNeadReinsert(device, nAtoms)
 {
     mNatoms            = nAtoms;
     const float boxDim = cbrt(1.f*nAtoms) * freelength;
@@ -38,7 +39,7 @@ void MetalGravity::generateRandomConfiguration()
 
             float3 p{x, y, z};
 
-            if (dot(p,p) < dot(mBox, mBox)/4) 
+            if (dot(p,p) < mBox.x * mBox.x / 4) 
             {
                 point = p;
                 break;
@@ -59,15 +60,15 @@ void MetalGravity::generateRandomConfiguration()
         insertAtomInTree(mTree, atom);
     }
 
-    Tree tmp(Tree::branchBuffer_type(mDevice, mQueue), Tree::leafBuffer_type(mDevice, mQueue));
-    tmp.leafs()->allocate(mNatoms);
-    tmp.branches()->allocate(mTree.numberOfBranches());
+//  Tree tmp(Tree::branchBuffer_type(mDevice, mQueue), Tree::leafBuffer_type(mDevice, mQueue));
+//  tmp.leafs()->allocate(mNatoms);
+//  tmp.branches()->allocate(mTree.numberOfBranches());
 
-    for(auto a: mTree.root())
-    {
-        insertAtomInTree(tmp, a.value());
-    }
-    std::swap(mTree, tmp);
+//  for(auto a: mTree.root())
+//  {
+//      insertAtomInTree(tmp, a.value());
+//  }
+//  std::swap(mTree, tmp);
 
     //buildOrderMap();
     mNextAtoms = *(mTree.leafs());
@@ -217,6 +218,7 @@ void MetalGravity::buildPipelines()
     mReduceMaxErrorPipeline = builder.buildCompute("/default.metallib", "reduceMaxError");
     mSecondIntegralPipeline = builder.buildCompute("/default.metallib", "secondIntegralAndErrors");
     mIntegratteVelosetiesPipeline = builder.buildCompute("/default.metallib", "integrateVeloseties");
+    mFindReinsertAtomsPipeline = builder.buildCompute("/default.metallib", "findReinstertAtoms");
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -328,6 +330,7 @@ void MetalGravity::reduceMaxError(MTL::ComputeCommandEncoder* encoder) {
     while(count > 1)
     {  
         encoder->setComputePipelineState(mReduceMaxErrorPipeline.get());
+
         encoder->setBuffer(mMaxError.buffer(), 0, 0);
         encoder->setBytes(&count, sizeof(count), 1);
  
@@ -340,12 +343,50 @@ void MetalGravity::reduceMaxError(MTL::ComputeCommandEncoder* encoder) {
 }
 //----------------------------------------------------------------------------------------------------------------------
 
+void MetalGravity::findReinsertAtoms(MTL::ComputeCommandEncoder* encoder) 
+{
+    encoder->setComputePipelineState(mFindReinsertAtomsPipeline.get());
+
+    encoder->setBuffer(mNextAtoms.metalBuffer(), 0, 0);
+    encoder->setBuffer(mTree.branches()->metalBuffer(), 0, 1);
+    encoder->setBuffer(mNeadReinsert.buffer(), 0, 2);
+
+    auto width = mFindReinsertAtomsPipeline->threadExecutionWidth();
+    MTL::Size threadsPerThreadgroup(width, 1, 1);
+    MTL::Size grid(mNatoms, 1, 1);
+
+    encoder->dispatchThreads(grid, threadsPerThreadgroup);
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+void MetalGravity::reinsertAtoms()
+{
+    auto it  = mTree.root().begin();
+    auto end = mTree.root().end();
+
+    for(int i = 0; i < mNatoms; ++i)
+    {
+        if( mNeadReinsert[i] > -1)
+        {
+            auto atom   = *(mTree.leafs()->getPointer(i));
+            auto value  = atom.value();
+            auto rootId = atom.parentIndex();
+            auto oct    = atom.possitonInParent();
+            auto sub    = Tree::reference(&mTree, rootId);
+            
+            sub.deleate(oct);
+            insertAtomInTree(mTree, value);
+        }
+    }
+}
+//----------------------------------------------------------------------------------------------------------------------
+
 void MetalGravity::step()
 {
     auto* commandBuffer = mQueue->commandBuffer();
     auto* encoder       = commandBuffer->computeCommandEncoder();
     const int maxStepps = 100;
-    float oldError      = 1.f;
+    float oldError      = 1e5f;
 
     firstIntegral(encoder);
     updateCenterOfMass(encoder);
@@ -363,7 +404,7 @@ void MetalGravity::step()
 
         auto maxError = mMaxError[0];
 
-        printf("Iteration %i:\tError: %11.7e\n", i, maxError);
+        //printf("Iteration %i:\tError: %11.7e\n", i, maxError);
 
         commandBuffer = mQueue->commandBuffer();
         encoder       = commandBuffer->computeCommandEncoder();
@@ -374,6 +415,7 @@ void MetalGravity::step()
     }
 
     integrateVelosseties(encoder);
+    findReinsertAtoms(encoder);
    
     encoder->endEncoding();
     commandBuffer->commit();
@@ -383,5 +425,7 @@ void MetalGravity::step()
     commandBuffer->release();
 
     std::swap(*(mTree.leafs()), mNextAtoms);
+
+    reinsertAtoms();
 }
 //----------------------------------------------------------------------------------------------------------------------
