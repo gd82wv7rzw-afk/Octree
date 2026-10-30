@@ -38,6 +38,7 @@ class SubTree: public BaseReference< typename Traits::TreeTraits<Tree>::branch_t
         using iterator = Octree::Implementation::Iterator::LeafStream<Tree>;
         using const_iterator = Octree::Implementation::Iterator::LeafStream<const Tree>;
         using size_type = id_type::size_type;
+        using difference_type = id_type::difference_type;
         //--------------------------------------------------------------------------------------------------------------
 
         constexpr SubTree(TreePtr tree, size_type index = 0) noexcept;
@@ -94,7 +95,7 @@ class SubTree: public BaseReference< typename Traits::TreeTraits<Tree>::branch_t
         using newLeafP = iterator (SubTree::*)(size_type i) noexcept;
         //--------------------------------------------------------------------------------------------------------------
 
-        auto updateSize(size_type inc) noexcept requires(!isConst);
+        auto updateSize(difference_type inc) noexcept requires(!isConst);
         //--------------------------------------------------------------------------------------------------------------
       
         auto findFirstLeaf() const noexcept; 
@@ -271,17 +272,18 @@ SubTree<Tree>::newLeaf_run(size_type i) noexcept requires(!isConst)
 
 template<class Tree>
 auto 
-SubTree<Tree>::updateSize(size_type inc) noexcept requires(!isConst)
+SubTree<Tree>::updateSize(difference_type inc) noexcept requires(!isConst)
 {
-    auto root = branchPtr(data()->parentIndex());
+    auto idx  = data()->parentIndex();
     auto oct  = data()->possitonInParent();
 
-    while (root != nullptr) 
+    while (idx != id_type::IndexMask) 
     {
+        auto root = branchPtr(idx);
         root->setSize(oct) += inc;
 
-        oct  = root->possitonInParent();
-        root = branchPtr(root->parentIndex());
+        oct = root->possitonInParent();
+        idx = root->parentIndex();
     }
 }
 //----------------------------------------------------------------------------------------------------------------------
@@ -311,7 +313,7 @@ SubTree<Tree>::SubTree&
 SubTree<Tree>::goUp() noexcept
 {
     mIndex = data()->parentIndex();
-    data() = branchPtr(mIndex);
+    data() = mIndex != id_type::IndexMask ? branchPtr(mIndex) : nullptr;
     return *this;
 }
 //----------------------------------------------------------------------------------------------------------------------
@@ -343,10 +345,11 @@ SubTree<Tree>::deleate(size_type i) noexcept requires(!isConst)
         updateSize(-sz);
 
         auto it = typename Tree::iterator(mTree, idx).goToDeapestPossition();
+        auto oct = 0;
 
-        while (it != *this) 
+        while (true) 
         {
-            for (auto oct = 0; oct < 8; ++oct) 
+            for (; oct < 8; ++oct) 
             {
                 auto idx = (*it).index(oct);
 
@@ -357,10 +360,24 @@ SubTree<Tree>::deleate(size_type i) noexcept requires(!isConst)
             }
 
             idx = it.index();
-            ++it;
+            oct = it->possitonInParent() + 1;
+            
+            it.goUp();
 
             buffer()->deleate(idx);
             --mTree->mNumberOfBranches; 
+
+            if (it == *this) break;
+
+            for (; oct < 8; ++oct) 
+            { 
+                if ((*it).isBranch(oct))
+                {
+                    it = typename Tree::iterator(mTree, idx).goToDeapestPossition();
+                    oct = 0;
+                    break;
+                }
+            }   
         }
     }
 

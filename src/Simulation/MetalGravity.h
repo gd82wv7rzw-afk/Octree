@@ -15,6 +15,7 @@ class MetalGravity
     private:
 
         using Tree = Octree::MetalTree<Simulation::Atom, Simulation::Branch>;
+        using id_type = Octree::Implementation::MetalTree<Simulation::Atom, Simulation::Branch>::id_type;
         using PipelinePtr = MetalStuff::Pipeline::ComputePipelinePtr;
         
         template< class T>
@@ -34,26 +35,11 @@ class MetalGravity
         /// @param natoms 
         void generateRandomConfiguration();
         //--------------------------------------------------------------------------------------------------------------
-
-        /// @brief calculate the acceleration for every atom on the GPU
-        void calculateAcelation(MTL::ComputeCommandEncoder* encoder, MTL::Buffer* atoms);
-        //--------------------------------------------------------------------------------------------------------------
-
-        /// @brief propagate the atoms in time temporaer
-        void firstIntegral(MTL::ComputeCommandEncoder* encoder);
-        void secondIntegralAndError(MTL::ComputeCommandEncoder* encoder);
-        void integrateVelosseties(MTL::ComputeCommandEncoder* encode);
-        //--------------------------------------------------------------------------------------------------------------
-
-        void updateCenterOfMass(MTL::ComputeCommandEncoder* encoder);
-        //--------------------------------------------------------------------------------------------------------------
-
-        void reduceMaxError(MTL::ComputeCommandEncoder* encoder);
-        void findReinsertAtoms(MTL::ComputeCommandEncoder* encoder);
-        void reinsertAtoms();
-        //--------------------------------------------------------------------------------------------------------------
-
+        
         void step();
+        //--------------------------------------------------------------------------------------------------------------
+
+        bool printSnapshot(int step);
         //--------------------------------------------------------------------------------------------------------------
 
         auto* tree()       noexcept {return &mTree;}
@@ -62,9 +48,19 @@ class MetalGravity
 
     private:
 
-        void insertAtomInTree(Tree& tree, const Atom& atom);
-        void updateOrder(Tree& tree, Tree::reference sub, int order);
+        Tree::reference::iterator insertAtomInTree(Tree& tree, const Atom& atom);
+        void incrOrder(Tree& tree, Tree::reference sub);
+        void decrOrder(Tree& tree, Tree::reference sub);
         void buildPipelines();
+
+        void calculateAcelation(MTL::ComputeCommandEncoder* encoder, MTL::Buffer* atoms);
+        void firstIntegral(MTL::ComputeCommandEncoder* encoder);
+        void secondIntegralAndError(MTL::ComputeCommandEncoder* encoder);
+        void integrateVelosseties(MTL::ComputeCommandEncoder* encode);
+        void updateCenterOfMass(MTL::ComputeCommandEncoder* encoder);
+        void reduceMaxError(MTL::ComputeCommandEncoder* encoder);
+        void findReinsertAtoms(MTL::ComputeCommandEncoder* encoder);
+        void reinsertAtoms();
         //--------------------------------------------------------------------------------------------------------------
 
         /// @brief the number of atoms
@@ -76,10 +72,10 @@ class MetalGravity
         //--------------------------------------------------------------------------------------------------------------
 
         /// @brief the barnes hut criteria, if theta > mTheta => go in the node
-        float mTheta{0.9f};
+        float mTheta{0.5f};
         //--------------------------------------------------------------------------------------------------------------
 
-        float mDt{1e-2};
+        float mDt{1e-1};
         //--------------------------------------------------------------------------------------------------------------
 
         Tree                  mTree;

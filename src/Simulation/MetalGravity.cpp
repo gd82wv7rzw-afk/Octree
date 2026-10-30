@@ -1,5 +1,7 @@
 #include "MetalGravity.h"
 
+#include<list>
+
 using namespace Simulation;
 using namespace simd;
 using namespace std;
@@ -31,11 +33,12 @@ void MetalGravity::generateRandomConfiguration()
     for (int i = 0; i < mNatoms; ++i) 
     {
         float3 point;
+
         while (true)
         {
-            float x = std::normal_distribution<float>(0.f, mBox.x / 2)(mRandom);
-            float y = std::normal_distribution<float>(0.f, mBox.y / 2)(mRandom);
-            float z = std::normal_distribution<float>(0.f, mBox.z / 2)(mRandom);
+            float x = std::normal_distribution<float>(0.f, mBox.x / 10)(mRandom);
+            float y = std::normal_distribution<float>(0.f, mBox.y / 10)(mRandom);
+            float z = std::normal_distribution<float>(0.f, mBox.z / 10)(mRandom);
 
             float3 p{x, y, z};
 
@@ -44,8 +47,8 @@ void MetalGravity::generateRandomConfiguration()
                 point = p;
                 break;
             }
-        };       
-        
+        };  
+              
         float3 v1
         {
             std::normal_distribution<float>(0.0f, 1.f)(mRandom),
@@ -60,17 +63,6 @@ void MetalGravity::generateRandomConfiguration()
         insertAtomInTree(mTree, atom);
     }
 
-//  Tree tmp(Tree::branchBuffer_type(mDevice, mQueue), Tree::leafBuffer_type(mDevice, mQueue));
-//  tmp.leafs()->allocate(mNatoms);
-//  tmp.branches()->allocate(mTree.numberOfBranches());
-
-//  for(auto a: mTree.root())
-//  {
-//      insertAtomInTree(tmp, a.value());
-//  }
-//  std::swap(mTree, tmp);
-
-    //buildOrderMap();
     mNextAtoms = *(mTree.leafs());
 
     //accelaeration
@@ -88,7 +80,7 @@ void MetalGravity::generateRandomConfiguration()
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-void MetalGravity::insertAtomInTree(Tree& tree, const Atom& atom)
+MetalGravity::Tree::reference::iterator MetalGravity::insertAtomInTree(Tree& tree, const Atom& atom)
 {
     float3 center{0.0f, 0.0f, 0.0f};
     float3 offset{-0.5f*mBox.x, -0.5f*mBox.y, -0.5f*mBox.z}; 
@@ -106,10 +98,11 @@ void MetalGravity::insertAtomInTree(Tree& tree, const Atom& atom)
         leaf->value() = atom;
 
         sub.self().value().com   = atom.pos;
+        sub.self().value().min   = offset;
         sub.self().value().width = width * 2;
         sub.self().value().order = order;
 
-        return;
+        return leaf;
     }
 
     // update the center of mass
@@ -123,7 +116,7 @@ void MetalGravity::insertAtomInTree(Tree& tree, const Atom& atom)
         auto leaf = sub.newLeaf(oct);
         leaf->value() = atom;
         
-        return;
+        return leaf;
     }
     else 
     {
@@ -151,50 +144,52 @@ void MetalGravity::insertAtomInTree(Tree& tree, const Atom& atom)
 
         if (sub.isLeaf(oct)) 
         {
-            auto leaf = sub.leaf(oct);
+            auto leafBack = sub.leaf(oct).value();
             sub.deleate(oct);
             sub.newSubTree(oct);
 
             sub.goIn(oct);
-            sub.self().value().com   = (leaf.value().pos + atom.pos) * 0.5f;
+            sub.self().value().com = (leafBack.pos + atom.pos) * 0.5f;
             //sub.self().value().order = 1;
 
             offset.x = oct & 0b001 ? offset.x + width: offset.x;
             offset.y = oct & 0b010 ? offset.y + width: offset.y;
             offset.z = oct & 0b100 ? offset.z + width: offset.z;
 
+            sub.self().value().width = width;
+            sub.self().value().min   = offset;
             width /= 2;
-            sub.self().value().width = width * 2;
 
             center = offset + float3{width, width, width};
            
-            oct = oct = (atom.pos.x >= center.x) | (atom.pos.y >= atom.pos.y) << 1 | (atom.pos.z >= center.z) << 2;
+            oct = (leafBack.pos.x >= atom.pos.x) | (leafBack.pos.y >= atom.pos.y) << 1 | (leafBack.pos.z >= atom.pos.z) <<2;
  
             sub.newLeaf(oct);
-            sub.leaf(oct).value() = atom;
+            sub.leaf(oct).value() = leafBack;
 
             oct = ~oct & 7;
  
-            sub.newLeaf(oct);
-            sub.leaf(oct).value() = leaf.value();
+            auto leaf = sub.newLeaf(oct);
+            leaf->value() = atom;
 
-            updateOrder(mTree, sub, 1);
+            incrOrder(mTree, sub);
 
-            return;
+            return leaf;
         }           
         else
         {
             auto leaf = sub.newLeaf(oct);
             leaf->value() = atom;
             
-            return;
+            return leaf;
         }
     }
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-void MetalGravity::updateOrder(Tree& tree, Tree::reference sub, int order)
+void MetalGravity::incrOrder(Tree& tree, Tree::reference sub)
 {
+    int order = 1;
     while (sub != tree.end())
     {
         if (sub.self().value().order < order)
@@ -203,6 +198,32 @@ void MetalGravity::updateOrder(Tree& tree, Tree::reference sub, int order)
         }
         sub.goUp();
         ++order;
+    }
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+void MetalGravity::decrOrder(Tree& tree, Tree::reference sub)
+{
+    int order = 1;
+    while (sub != tree.end())
+    {
+        int maxOrder = 0;
+
+        for (int o = 0; o < 8; ++o) 
+        { 
+            if (sub.isBranch(o)) 
+            {
+                auto tmpO = sub.branch(o).value().order;
+                if(tmpO > maxOrder) maxOrder = tmpO;
+            }
+        }
+
+        order = maxOrder + 1;
+        if (sub.self().value().order > order)
+        {
+            sub.self().value().order = order;
+        }
+        sub.goUp();
     }
 }
 //----------------------------------------------------------------------------------------------------------------------
@@ -350,6 +371,8 @@ void MetalGravity::findReinsertAtoms(MTL::ComputeCommandEncoder* encoder)
     encoder->setBuffer(mNextAtoms.metalBuffer(), 0, 0);
     encoder->setBuffer(mTree.branches()->metalBuffer(), 0, 1);
     encoder->setBuffer(mNeadReinsert.buffer(), 0, 2);
+    encoder->setBuffer(mTree.leafs()->metalBuffer(), 0, 3);
+    encoder->setBytes(&mBox, sizeof(mBox), 4);
 
     auto width = mFindReinsertAtomsPipeline->threadExecutionWidth();
     MTL::Size threadsPerThreadgroup(width, 1, 1);
@@ -361,23 +384,67 @@ void MetalGravity::findReinsertAtoms(MTL::ComputeCommandEncoder* encoder)
 
 void MetalGravity::reinsertAtoms()
 {
-    auto it  = mTree.root().begin();
-    auto end = mTree.root().end();
+
+//  Tree tmp(Tree::branchBuffer_type(mDevice, mQueue), Tree::leafBuffer_type(mDevice, mQueue));
+//  tmp.leafs()->allocate(mNatoms);
+//  tmp.branches()->allocate(mNatoms / 2);
+
+//  auto it = mTree.root().begin();
+//  auto end = mTree.root().end();
+
+//  while ( it != end)
+//  {
+//      auto atom = it->value();
+//      insertAtomInTree(tmp, atom);
+//      ++it;
+//  }
+
+//  std::swap(mTree, tmp);
+//  mNextAtoms = *(mTree.leafs());
+
+//  return;
 
     for(int i = 0; i < mNatoms; ++i)
     {
-        if( mNeadReinsert[i] > -1)
+        if( mNeadReinsert[i] > 0)
         {
             auto atom   = *(mTree.leafs()->getPointer(i));
-            auto value  = atom.value();
             auto rootId = atom.parentIndex();
             auto oct    = atom.possitonInParent();
             auto sub    = Tree::reference(&mTree, rootId);
-            
-            sub.deleate(oct);
-            insertAtomInTree(mTree, value);
+
+            {
+                sub.deleate(oct);
+                insertAtomInTree(mTree, mNextAtoms[i].value());
+            }
+
+            auto size = sub.size();
+
+            // if the branch is empty
+            if (size == 0)
+            {
+                while (size == 0) 
+                {
+                    auto parentOct = sub.self().possitonInParent();
+                    sub.goUp();
+     
+                    if (sub) 
+                    { 
+                        sub.deleate(parentOct);
+                        size = sub.size();
+                    }
+                    else
+                    {
+                        sub = mTree.root();
+                        break;
+                    } 
+                }
+                decrOrder(mTree, sub);  
+            }
         }
     }
+
+    mNextAtoms = *(mTree.leafs());
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -415,17 +482,48 @@ void MetalGravity::step()
     }
 
     integrateVelosseties(encoder);
+
+    // atension, the tmporary buffer for the atoms ist mTree.leafs(), we swap it at the end back to mNextAtoms
     findReinsertAtoms(encoder);
    
     encoder->endEncoding();
     commandBuffer->commit();
     commandBuffer->waitUntilCompleted();
 
-    encoder->release();
-    commandBuffer->release();
+    //encoder->release();
+    //commandBuffer->release();
 
     std::swap(*(mTree.leafs()), mNextAtoms);
 
     reinsertAtoms();
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+bool MetalGravity::printSnapshot(int step)
+{
+    char fname[50];
+    snprintf(fname, 50, "step_%09i.xyz", step);
+
+    FILE* file = fopen(fname, "w");
+    if(file == nullptr) return false;
+
+    fprintf(file, "%i\n", mNatoms);
+    fprintf(file, "Box: %14.7e\t%14.7e\t%14.7e\n", mBox.x, mBox.y, mBox.z);
+
+    auto it = mTree.root().begin();
+    auto end = mTree.root().end();
+
+    while(it != end)
+    {
+        auto r = it->value().pos;
+        auto v = it->value().vel;
+
+        fprintf(file, "Xx\t%14.7e\t%14.7e\t%14.7e\t%14.7e\t%14.7e\t%14.7e\n", r.x, r.y, r.z, v.x, v.y, v.z);
+
+        ++it;
+    }
+
+    fclose(file);
+    return true;
 }
 //----------------------------------------------------------------------------------------------------------------------

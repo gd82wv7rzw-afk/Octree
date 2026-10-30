@@ -43,26 +43,17 @@ class BaseStream: public References::BaseReference<typename Traits::TreeTraits<T
 
         /// @brief Returns a reference to the current branch.
         /// @return A const reference to the current branch.
-        auto operator*() const noexcept                                        
-        {
-            return const_reference(mTree, mIndex); 
-        }
+        auto operator*() const noexcept { return const_reference(mTree, mIndex); }
         //--------------------------------------------------------------------------------------------------------------
 
         /// @brief Returns a mutable reference to the current branch.
         /// @return A reference to the current branch.
-        auto operator*() noexcept requires (!isConst) 
-        {
-            return reference(mTree, mIndex);
-        }
+        auto operator*() noexcept requires (!isConst) {return reference(mTree, mIndex);}
         //--------------------------------------------------------------------------------------------------------------
 
         /// @brief Returns a pointer to the current branch.
         /// @return Pointer to the current branch data.
-        constexpr auto* operator->() const noexcept
-        {
-            return data();
-        }
+        constexpr auto* operator->() const noexcept { return data(); }
         //--------------------------------------------------------------------------------------------------------------
 
         /// @brief Provides const pointer-like access to the current branch. 
@@ -147,8 +138,7 @@ constexpr BaseStream<Tree>::BaseStream(Tree* tree, size_type index) noexcept
       mIndex(index),
       mTree(tree)
 {
-    if (tree != nullptr)
-        base_type::operator=(branch(index));
+    if (tree != nullptr) base_type::operator=(mIndex != id_type::IndexMask ? branch(mIndex) : nullptr);
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -156,15 +146,13 @@ template<class Tree>
 BaseStream<Tree>&
 BaseStream<Tree>::operator++() noexcept
 {
-    if (!bool(*this))
-        return *this;
+    if (!bool(*this)) return *this;
 
     mIndex = data()->parentIndex();
     char oct = data()->possitonInParent() + 1;
-    data() = branch(mIndex);
+    data() = mIndex != id_type::IndexMask ? branch(mIndex) : nullptr;
 
-    if (!bool(*this))
-        return *this;
+    if (!bool(*this)) return *this;
 
     for (; oct < 8; ++oct)
     {
@@ -201,7 +189,7 @@ BaseStream<Tree>::operator--() noexcept
         auto parendId = data()->parendId();
         mIndex = parendId & id_type::IndexMask;
         oct = id_type::OctantToNumber(parendId) - 1;
-        base_type::operator=(branch(mIndex));
+        base_type::operator=(mIndex != id_type::IndexMask ? branch(mIndex) : nullptr);
     }
 
     return *this;
@@ -212,11 +200,10 @@ template<class Tree>
 BaseStream<Tree>&
 BaseStream<Tree>::goUp() noexcept
 {
-    if (!bool(*this))
-        return *this;
+    if (!bool(*this)) return *this;
 
     mIndex = data()->parendId() & id_type::IndexMask;
-    base_type::operator=(branch(mIndex));
+    base_type::operator=(mIndex != id_type::IndexMask ? branch(mIndex) : nullptr);
 
     return *this;
 }
@@ -226,8 +213,7 @@ template<class Tree>
 BaseStream<Tree>&
 BaseStream<Tree>::goToDeapestPossition() noexcept
 {
-    if (!bool(*this))
-        return *this;
+    if (!bool(*this)) return *this;
 
     auto oct = 0;
 

@@ -73,6 +73,9 @@ class MetalBuffer
         constexpr size_type nextIndex() const noexcept  { return mNextIndex == id_type::IndexMask ? mSize : mNextIndex;}
         //--------------------------------------------------------------------------------------------------------------
 
+        constexpr size_type capacity() const noexcept { return mSize; }
+        //--------------------------------------------------------------------------------------------------------------
+
         /// @brief Inserts an element into the buffer.
         /// Appends the element if no deleted entries are available; otherwise,
         /// reuses the first entry in the free list.
@@ -263,8 +266,8 @@ void MetalBuffer<T>::copy(MTL::Buffer* source, MTL::Buffer* dest, size_type size
     commandBuffer->commit();
     commandBuffer->waitUntilCompleted();
 
-    encoder->release();
-    commandBuffer->release();
+    //encoder->release();
+    //commandBuffer->release();
 }
 //----------------------------------------------------------------------------------------------------------------------
 

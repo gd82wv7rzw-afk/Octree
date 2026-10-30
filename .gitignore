@@ -22,6 +22,7 @@ Makefile
 *.dylib
 *.so
 *.exe
+*.xyz
 
 # Caches and temporary files
 .cache/

@@ -62,7 +62,7 @@ constexpr LeafStream<Tree>::LeafStream( Tree* tree, size_type index) noexcept:
     mIndex(index), 
     mTree(tree) 
 { 
-    if ( tree != nullptr) base_type::operator = (leaf(index));
+    if ( tree != nullptr) base_type::operator = (mIndex != id_type::IndexMask ? leaf(index) : nullptr );
 }
 //--------------------------------------------------------------------------------------------------------------
 
@@ -75,7 +75,7 @@ LeafStream<Tree>::operator ++ () noexcept
     //auto parendId = data()->parendId();
     auto rootIdx  = data()->parentIndex();
     char oct      = data()->possitonInParent() + 1;
-    auto root     = (branch(rootIdx));
+    auto root     = (rootIdx != id_type::IndexMask ? branch(rootIdx) : nullptr);
 
     while ( root != nullptr )
     {
@@ -100,7 +100,7 @@ LeafStream<Tree>::operator ++ () noexcept
         }
         rootIdx  = root->parentIndex();
         oct      = root->possitonInParent() + 1;
-        root     = (branch(rootIdx));
+        root     = (rootIdx != id_type::IndexMask ? branch(rootIdx) : nullptr);
     }
 
     data() = nullptr;
@@ -118,7 +118,7 @@ LeafStream<Tree>::operator -- () noexcept
     auto parendId = data()->parendId();
     auto rootIdx  = parendId & id_type::IndexMask;
     char oct      = id_type::OctantToNumber(parendId) - 1;
-    auto root     = (branch(rootIdx));
+    auto root     = (rootIdx != id_type::IndexMask ? branch(rootIdx) : nullptr );
 
     while ( root != nullptr) 
     {
@@ -144,7 +144,7 @@ LeafStream<Tree>::operator -- () noexcept
         parendId = root->parendId();
         rootIdx  = parendId & id_type::IndexMask;
         oct      = id_type::OctantToNumber(parendId) - 1;
-        root     = (branch(rootIdx));
+        root     = ( rootIdx != id_type::IndexMask ? branch(rootIdx) : nullptr );
     } 
 
     data() = nullptr;
