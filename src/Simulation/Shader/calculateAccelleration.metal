@@ -8,39 +8,42 @@ float3 calculatePeriodicDistance(thread const float3& a, thread const float3&b, 
 {
     float3 x = b - a;
 
-    if (x.x < -0.5 * box.x) x.x += box.x;
-    if (x.y < -0.5 * box.y) x.y += box.y;
-    if (x.z < -0.5 * box.z) x.z += box.z;
+    // Branchless: Wähle box.x, wenn Bedingung wahr ist, sonst 0
+    x.x += select(0.0f, box.x, x.x < -0.5f * box.x);
+    x.x -= select(0.0f, box.x, x.x >= 0.5f * box.x);
 
-    if (x.x >= 0.5 * box.x) x.x -= box.x;
-    if (x.y >= 0.5 * box.y) x.y -= box.y;
-    if (x.z >= 0.5 * box.z) x.z -= box.z;
+    x.y += select(0.0f, box.y, x.y < -0.5f * box.y);
+    x.y -= select(0.0f, box.y, x.y >= 0.5f * box.y);
+
+    x.z += select(0.0f, box.z, x.z < -0.5f * box.z);
+    x.z -= select(0.0f, box.z, x.z >= 0.5f * box.z);
 
     return x;
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-float maxDim(const thread float3& x)
-{
-    float max = 0;
-
-    if (fabs(x.x) > max) max = fabs(x.x);
-    if (fabs(x.y) > max) max = fabs(x.y);
-    if (fabs(x.z) > max) max = fabs(x.z);
-
-    return max;
-}
+//float maxDim(const thread float3& x)
+//{
+//    float max = 0;
+//
+//    if (fabs(x.x) > max) max = fabs(x.x);
+//    if (fabs(x.y) > max) max = fabs(x.y);
+//    if (fabs(x.z) > max) max = fabs(x.z);
+//
+//    return max;
+//}
 //----------------------------------------------------------------------------------------------------------------------
 
 float3 grad(const thread float3& x)
 {
-    auto r2 = dot(x,x);
-    auto r  = metal::sqrt(r2);
+    auto r2 = dot(x,x) + 1e-10f;
+    
+    // rsqrt(r2) ist 1/r. Das ist extrem schnell auf Apple Silicon.
+    auto invR  = rsqrt(r2);             // 1/r
+    auto invR3 = invR * invR * invR;    // 1/r^3
+    auto invR4 = invR3 * invR;          // 1/r^4
 
-    auto r3r  = r2 * r; r3r = 1.f / r3r; 
-    auto r4r  = r2 * r2; r4r = 1.f / r4r; 
-
-    auto factor = -2.f * r4r + r3r;
+    auto factor = -2.f * invR4 + invR3;
 
     return x * factor;
 }
@@ -125,24 +128,56 @@ void calculateClusterAcceleration(
 //----------------------------------------------------------------------------------------------------------------------
 
 kernel void calculateAccelleration(
-    device         Simulation::LeafNode*   atoms    [[buffer(0)]],
-    device   const Simulation::BranchNode* branches [[buffer(1)]],
-    constant const float3&                 box      [[buffer(2)]],
-    constant const float&                  mTheta   [[buffer(3)]],
-    uint tid [[thread_position_in_grid]])
+    device         Simulation::LeafNode*   atoms          [[buffer(0)]],
+    device   const Simulation::BranchNode* branches       [[buffer(1)]],
+    constant const float3&                 box            [[buffer(2)]],
+    constant const float&                  mTheta         [[buffer(3)]],
+    threadgroup    Simulation::BranchNode* sharedBranches [[threadgroup(0)]], // NEU
+    uint tid [[thread_position_in_grid]],
+    uint lid [[thread_position_in_threadgroup]],         // NEU
+    uint threadsPerGroup [[threads_per_threadgroup]])    // NEU
+
+//    device         Simulation::LeafNode*   atoms    [[buffer(0)]],
+//    device   const Simulation::BranchNode* branches [[buffer(1)]],
+//    constant const float3&                 box      [[buffer(2)]],
+//    constant const float&                  mTheta   [[buffer(3)]],
+//    uint tid [[thread_position_in_grid]])
 {
     using namespace Simulation;
 
+    // 1. Shared Memory laden (wie zuvor)
+    const uint maxSharedNodes = 128;
+    if (lid < maxSharedNodes) 
+    {
+        sharedBranches[lid] = branches[lid];
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    // 2. Hilfsfunktion, um immer den richtigen Speicher zu erwischen
+    auto getBranch = [&](uint idx) -> const BranchNode* 
+    {
+        if (idx < maxSharedNodes) 
+        {
+            return sharedBranches + idx;
+        } else 
+        {
+            return branches + idx;
+        }
+    };
+
+    // 3. Dein alter Code, aber wir nutzen jetzt getBranch(idx)
     atoms[tid].value.acc = {0.f, 0.f, 0.f};
 
     uint rootId  = atoms[tid].rootId;
     uint rootIdx = rootId & IndexMask;
     uint rootOct = rootId >> OctantOffsetBitNumber;
 
-    const BranchNode* root = branches + rootIdx;
+    // Hier nutzen wir das erste Mal unsere Hilfsfunktion!
+    const BranchNode* root = getBranch(rootIdx);
     const BranchNode* wbranch = root;
 
     uint oct = 0;
+    const float mTheta2 = mTheta * mTheta;
 
     while (wbranch != nullptr)
     {
@@ -155,19 +190,27 @@ kernel void calculateAccelleration(
             if (wbranch->childIds[oct] == IndexMask) continue;
 
             bool isBranch = wbranch->childIds[oct] & BranchBit;
+            uint childIdx = wbranch->childIds[oct] & IndexMask;
 
-            float3 rOther = isBranch ? branches[wbranch->childIds[oct] & IndexMask].value.com : atoms[wbranch->childIds[oct] & IndexMask].value.pos;
+            // NEU: Wir holen uns den Kind-Knoten über unsere Hilfsfunktion
+            const BranchNode* childBranch = isBranch ? getBranch(childIdx) : nullptr;
+
+            // NEU: Zugriff über childBranch statt direkt über branches[...]
+            float3 rOther = isBranch ? childBranch->value.com : atoms[childIdx].value.pos;
             float3 selfR  = atoms[tid].value.pos;
             float3 r      = calculatePeriodicDistance(selfR, rOther, box);
-            float width   = isBranch ? branches[wbranch->childIds[oct] & IndexMask].value.width : 0.f;
 
-            float      rMax  = maxDim(r);
-            float      theta = width / rMax;
+            // NEU: Auch hier nutzen wir childBranch
+            float width   = isBranch ? childBranch->value.width : 0.f;
+
+            float      invR2 = 1.f / dot(r,r);
+            float      theta2 = (width * width) * invR2;
             const uint wait  = isBranch ? wbranch->childSizes[oct] : 1;
 
-            if (theta > mTheta)
+            if (theta2 > mTheta2)
             {
-                wbranch = branches + (wbranch->childIds[oct] & IndexMask);
+                // NEU: Auch beim Abstieg in den Baum getBranch nutzen
+                wbranch = getBranch(childIdx);
                 oct = 0;
                 break;
             }

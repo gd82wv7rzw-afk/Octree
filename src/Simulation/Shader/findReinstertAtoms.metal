@@ -26,8 +26,12 @@ kernel void findReinstertAtoms(
     // periodic boundery conditions
     for( int i = 0; i < 3; ++i) 
     {
-        if( r[i] < -box_2[i]) atom.value.pos[i] = r[i] + box[i]; 
-        if( r[i] >= box_2[i]) atom.value.pos[i] = r[i] - box[i];   
+        float pos = r[i];
+
+        while( pos < -box_2[i])  pos += box[i]; 
+        while( r[i] >= box_2[i]) pos -= box[i];  
+        
+        atom.value.pos[i] = pos;
     }
 
     atomsBackup[id]  = atom;

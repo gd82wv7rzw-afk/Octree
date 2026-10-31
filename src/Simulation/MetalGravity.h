@@ -17,6 +17,7 @@ class MetalGravity
         using Tree = Octree::MetalTree<Simulation::Atom, Simulation::Branch>;
         using id_type = Octree::Implementation::MetalTree<Simulation::Atom, Simulation::Branch>::id_type;
         using PipelinePtr = MetalStuff::Pipeline::ComputePipelinePtr;
+        using TreeBranch = Octree::Implementation::MetalTree<Simulation::Atom, Simulation::Branch>::branch_type;
         
         template< class T>
         using MetalBuffer = Octree::Implementation::MetalBuffer<T>;

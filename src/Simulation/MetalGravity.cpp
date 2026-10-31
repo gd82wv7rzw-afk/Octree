@@ -244,8 +244,14 @@ void MetalGravity::calculateAcelation(MTL::ComputeCommandEncoder* encoder, MTL::
     encoder->setBytes(&mTheta, sizeof(mTheta), 3);
     //encoder->setBytes(&mR0square, sizeof(mR0square), 4);
 
+    // NEU: Reserviere Speicher für 256 BranchNodes im Threadgroup-Speicher
+    // Der Index 0 entspricht dem [[threadgroup(0)]] im Shader
+    size_t sharedMemorySize = sizeof(TreeBranch) * 128;
+    encoder->setThreadgroupMemoryLength(sharedMemorySize, 0);
+
     // gpu layout
-    const auto width = mCalculateAcelationPipeline->threadExecutionWidth();
+    //const auto width = mCalculateAcelationPipeline->threadExecutionWidth();
+    const auto width = 128;
     MTL::Size threadsPerThreadgroup(width, 1, 1);
     MTL::Size grid(mNatoms, 1, 1);
 
@@ -426,6 +432,21 @@ void MetalGravity::reinsertAtoms()
 }
 //----------------------------------------------------------------------------------------------------------------------
 
+/*
+#define PROFILE_METAL_CALL(name, code) \
+    commandBuffer = mQueue->commandBuffer(); \
+    encoder = commandBuffer->computeCommandEncoder(); \
+    start = std::chrono::steady_clock::now(); \
+    code; \
+    encoder->endEncoding(); \
+    commandBuffer->commit(); \
+    commandBuffer->waitUntilCompleted(); \
+    end = std::chrono::steady_clock::now(); \
+    time = std::chrono::duration<double, std::micro>(end - start).count() * 1e-6; \
+    printf("%-30s Time: %14.7lfs\n", name, time);
+//----------------------------------------------------------------------------------------------------------------------
+*/
+
 void MetalGravity::step()
 {
     auto* commandBuffer = mQueue->commandBuffer();
@@ -434,20 +455,30 @@ void MetalGravity::step()
     const int maxStepps = 100;
     float oldError      = 1e5f;
 
+    //std::chrono::steady_clock::time_point start, end;
+    //double time;
+
+    //PROFILE_METAL_CALL("firstIntegral", firstIntegral(encoder);)
     firstIntegral(encoder);
+
+    //PROFILE_METAL_CALL("updateCenterOfMass", updateCenterOfMass(encoder);)
     updateCenterOfMass(encoder);
 
     for (int i = 0; i < maxStepps; ++i)
     {
+        //PROFILE_METAL_CALL("calculateAcelation", calculateAcelation(encoder, mNextAtoms.metalBuffer());)
         calculateAcelation(encoder, mNextAtoms.metalBuffer());
         //encoder->memoryBarrier(MTL::BarrierScopeBuffers);
 
+        //PROFILE_METAL_CALL("secondIntegralAndError", secondIntegralAndError(encoder);)
         secondIntegralAndError(encoder);
         //encoder->memoryBarrier(MTL::BarrierScopeBuffers);
 
+        //PROFILE_METAL_CALL("updateCenterOfMass", updateCenterOfMass(encoder);)
         updateCenterOfMass(encoder);
         //encoder->memoryBarrier(MTL::BarrierScopeBuffers);
 
+        //PROFILE_METAL_CALL("reduceMaxError", reduceMaxError(encoder);)
         reduceMaxError(encoder);
         //encoder->memoryBarrier(MTL::BarrierScopeBuffers);
     
@@ -469,10 +500,12 @@ void MetalGravity::step()
         oldError = maxError;
     }
 
+    //PROFILE_METAL_CALL("integrateVelosseties", integrateVelosseties(encoder);)
     integrateVelosseties(encoder);
     //encoder->memoryBarrier(MTL::BarrierScopeBuffers);
 
     // atension, the tmporary buffer for the atoms ist mTree.leafs(), we swap it at the end back to mNextAtoms
+    //PROFILE_METAL_CALL("findReinsertAtoms", findReinsertAtoms(encoder);)
     findReinsertAtoms(encoder);
    
     encoder->endEncoding();
@@ -486,7 +519,12 @@ void MetalGravity::step()
 
     //printf("Integraton done.\n");
 
+    //start = std::chrono::steady_clock::now();
     reinsertAtoms();
+    //end = std::chrono::steady_clock::now();
+    //time = std::chrono::duration<double, std::micro>(end - start).count() * 1e-6;
+
+    //printf("%-30s Time: %14.7lfs\n", "reinsertAtoms", time);
 }
 //----------------------------------------------------------------------------------------------------------------------
 
