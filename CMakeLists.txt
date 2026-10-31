@@ -1,8 +1,12 @@
-
 cmake_minimum_required(VERSION 3.24)
 
 set(APP_NAME barnesHut)
 project(${APP_NAME} LANGUAGES CXX)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_options(-fsanitize=address -g)
+    add_link_options(-fsanitize=address)
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -32,19 +36,23 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(metal_cpp metal_cpp_extensions)
 
-# Executable
+# Executable (Jetzt als MACOSX_BUNDLE, damit die GUI funktioniert)
 set(APP_SOURCES
     "${SOURCE_DIR}/main.cpp"
     "${SOURCE_DIR}/MetalImplementation.cpp"
     "${SOURCE_DIR}/SimulatorV0.cpp"
     "${SOURCE_DIR}/MetalStuff/Pipeline/PipelineBuilder.cpp"
     "${SOURCE_DIR}/Simulation/MetalGravity.cpp"
+    # Hier später deine GUI-Dateien hinzufügen, z.B.:
+    # "${SOURCE_DIR}/App/AppDelegate.mm"
+    # "${SOURCE_DIR}/MainWindow/UI/MainMenu.xib"
 )
 
-add_executable(${APP_NAME} ${APP_SOURCES})
+# WICHTIG: MACOSX_BUNDLE sorgt dafür, dass macOS die App als GUI-App mit Fenster startet
+add_executable(${APP_NAME} MACOSX_BUNDLE ${APP_SOURCES})
 
-# Metal library — next to the executable
-set(SHADER_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+# Metal library — jetzt direkt im App Bundle
+set(SHADER_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app/Contents/Resources")
 set(METALLIB "${SHADER_OUTPUT_DIR}/default.metallib")
 
 target_compile_definitions(${APP_NAME} PRIVATE
@@ -125,11 +133,11 @@ set(AIR_FILES)
 
 foreach(SHADER IN LISTS SHADERS)
     get_filename_component(SHADER_NAME "${SHADER}" NAME_WE)
-    set(AIR_FILE "${SHADER_OUTPUT_DIR}/${SHADER_NAME}.air")
+    set(AIR_FILE "${CMAKE_CURRENT_BINARY_DIR}/${SHADER_NAME}.air")
 
     add_custom_command(
         OUTPUT "${AIR_FILE}"
-        COMMAND "${CMAKE_COMMAND}" -E make_directory "${SHADER_OUTPUT_DIR}"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}"
 
         COMMAND "${XCRUN}" -sdk macosx metal
                 -I "${SOURCE_DIR}"
@@ -145,6 +153,7 @@ endforeach()
 
 add_custom_command(
     OUTPUT "${METALLIB}"
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${SHADER_OUTPUT_DIR}"
     COMMAND "${XCRUN}" -sdk macosx metallib
             ${AIR_FILES}
             -o "${METALLIB}"
@@ -154,3 +163,8 @@ add_custom_command(
 
 add_custom_target(compile_shaders DEPENDS "${METALLIB}")
 add_dependencies(${APP_NAME} compile_shaders)
+
+# WICHTIG FÜR GUI: Hier sagen wir CMake, wie es .xib Dateien behandeln soll
+set_source_files_properties(${APP_SOURCES} PROPERTIES
+    MACOSX_PACKAGE_LOCATION "Resources"
+)

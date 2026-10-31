@@ -1,27 +1,23 @@
 
-#include "SimulatorV0.h"
 #include "Simulation/MetalGravity.h"
 
 #include <chrono>
-#include <iostream>
-#include <ratio>
-#include <simd/quaternion.h>
 #include <simd/simd.h>
-#include <simd/vector_types.h>
 
 int main(void) {
 
     MTL::Device* device = MTL::CreateSystemDefaultDevice();
     MTL::CommandQueue* queue = device->newCommandQueue();
-    const unsigned nAtoms  = 1e2;
+
+    const unsigned nAtoms  = 1e5;
     const float freeLength = 1e3;
 
     Simulation::MetalGravity gravitySim(device, queue, nAtoms, freeLength);
     gravitySim.generateRandomConfiguration();
 
-    for ( int i = 0; i < 5000; ++i)
+    for ( int i = 0; i < 100000; ++i)
     {
-        if (i % 10 == 0) gravitySim.printSnapshot(i);
+        if (i % 100 == 0) gravitySim.printSnapshot(i);
 
         auto start = std::chrono::steady_clock::now();
         gravitySim.step();

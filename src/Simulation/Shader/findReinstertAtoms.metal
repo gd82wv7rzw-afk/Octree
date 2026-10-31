@@ -20,7 +20,7 @@ kernel void findReinstertAtoms(
     const float width     = root.value.width;
     const float3 minPos   = root.value.min;
     const float3 maxPos   = minPos + float3{width, width, width};
-    const float3        r = atom.value.pos;
+    float3              r = atom.value.pos;
     const float3    box_2 = box / 2;
 
     // periodic boundery conditions
@@ -31,13 +31,14 @@ kernel void findReinstertAtoms(
     }
 
     atomsBackup[id]  = atom;
+    r                = atom.value.pos;
 
     rootSize[id] = 0;
     for( int i = 0; i < 3; ++i) 
     {
         if( r[i] < minPos[i] || r[i] >= maxPos[i])
         {
-            for( int j = 0; j < 8; ++j) rootSize[id] += root.childSizes[j];         
+            rootSize[id] = 1;         
             break;
         }
     }   

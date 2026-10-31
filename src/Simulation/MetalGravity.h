@@ -21,7 +21,6 @@ class MetalGravity
         template< class T>
         using MetalBuffer = Octree::Implementation::MetalBuffer<T>;
 
-
     public:
 
         /// @brief the ctor
@@ -30,9 +29,6 @@ class MetalGravity
         MetalGravity(MTL::Device* device, MTL::CommandQueue* que, int nAtoms, float freelength) noexcept;
         //--------------------------------------------------------------------------------------------------------------
 
-        /// @brief generate random possitions and veloseties. Set also the periodic box and the number of atoms
-        /// @param box 
-        /// @param natoms 
         void generateRandomConfiguration();
         //--------------------------------------------------------------------------------------------------------------
         
@@ -72,10 +68,10 @@ class MetalGravity
         //--------------------------------------------------------------------------------------------------------------
 
         /// @brief the barnes hut criteria, if theta > mTheta => go in the node
-        float mTheta{0.5f};
+        float mTheta{0.8f};
         //--------------------------------------------------------------------------------------------------------------
 
-        float mDt{1e-1};
+        float mDt{2.5e-1};
         //--------------------------------------------------------------------------------------------------------------
 
         Tree                  mTree;
@@ -85,7 +81,6 @@ class MetalGravity
         std::mt19937          mRandom;
         MTL::Device*          mDevice{nullptr};
         MTL::CommandQueue*    mQueue{nullptr};
-        //std::vector<std::vector<uint32_t> > mOrderMap;
         //--------------------------------------------------------------------------------------------------------------
 
         PipelinePtr mCalculateAcelationPipeline{nullptr};
