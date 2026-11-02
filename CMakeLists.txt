@@ -142,7 +142,6 @@ set(SHADERS
     src/Simulation/Shader/updateCenterOfMass.metal
     src/Simulation/Shader/reduseMaxError.metal
     src/Simulation/Shader/findReinstertAtoms.metal
-    src/Octree/Implementation/BufferShader/copy.metal
 )
 
 set(AIR_FILES)

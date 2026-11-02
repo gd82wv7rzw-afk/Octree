@@ -100,9 +100,6 @@ class MetalBuffer
 
     private:
 
-        void buildPipelines();
-        //--------------------------------------------------------------------------------------------------------------
-        
         MTL::Buffer* mBuffer{nullptr};
         MTL::Device* mDevice;
         MTL::CommandQueue* mQueue;
@@ -112,9 +109,6 @@ class MetalBuffer
         
         /// @brief Index of the first deleted entry, or IndexMask if none exist.
         size_type mNextIndex{id_type::IndexMask};
-
-        MetalStuff::Pipeline::ComputePipelinePtr mCopyPipeline{nullptr}; 
-        //--------------------------------------------------------------------------------------------------------------
 };
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -140,8 +134,6 @@ MetalBuffer<T>::MetalBuffer(
             throw std::runtime_error("Failed to create Metal buffer");
         }
     }
-
-    buildPipelines();
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -164,7 +156,6 @@ MetalBuffer<T>::MetalBuffer(const MetalBuffer& other)
         }
     }
 
-    buildPipelines();
     if (other.mSize > 0) copy(other.mBuffer, mBuffer, mSize);
 }
 //----------------------------------------------------------------------------------------------------------------------
@@ -196,7 +187,6 @@ MetalBuffer<T>::operator=(MetalBuffer&& other)
     mQueue         = other.mQueue;
     mBuffer        = other.mBuffer;
     mNextIndex     = other.mNextIndex;
-    mCopyPipeline  = std::move(other.mCopyPipeline);
 
     other.mSize      = 0;
     other.mDevice    = nullptr;
@@ -215,7 +205,6 @@ MetalBuffer<T>::MetalBuffer(MetalBuffer&& other)
     , mQueue(other.mQueue)
     , mSize(other.mSize)
     , mNextIndex(other.mNextIndex)
-    , mCopyPipeline(std::move(other.mCopyPipeline))
 {
     other.mDevice    = nullptr;
     other.mQueue     = nullptr;
@@ -241,17 +230,6 @@ MetalBuffer<T>::~MetalBuffer()
 //----------------------------------------------------------------------------------------------------------------------
 
 template <class T>
-void 
-MetalBuffer<T>::buildPipelines()
-{
-    assert(mDevice != nullptr);
-
-    PipelineBuilder builder(mDevice);
-    mCopyPipeline = builder.buildCompute("/default.metallib", "copy");
-}
-//----------------------------------------------------------------------------------------------------------------------
-
-template <class T>
 void MetalBuffer<T>::copy(MTL::Buffer* source, MTL::Buffer* dest, size_type size)
 {
     assert(source != nullptr && dest != nullptr);
@@ -260,26 +238,30 @@ void MetalBuffer<T>::copy(MTL::Buffer* source, MTL::Buffer* dest, size_type size
     if (size == 0) return;
 
     auto* commandBuffer = mQueue->commandBuffer();
-    auto* encoder = commandBuffer->computeCommandEncoder();
+    auto* encoder = commandBuffer->blitCommandEncoder();
 
-    encoder->setComputePipelineState(mCopyPipeline.get());
-    encoder->setBuffer(source, 0, 0);
-    encoder->setBuffer(dest, 0, 1);
+    encoder->copyFromBuffer
+    (
+        // source buffer
+        source,
 
-    const auto stride = static_cast<uint32_t>(sizeof(T));
-    encoder->setBytes(&stride, sizeof(stride), 2);
+        // source offset
+        0,
 
-    const auto width = mCopyPipeline->threadExecutionWidth();
+        // target buffer
+        dest,
 
-    encoder->dispatchThreads(MTL::Size(size, 1, 1), MTL::Size(width, 1, 1));
+        // target offset
+        0,
+
+        // size in byte
+        size * sizeof(T)
+    );
 
     encoder->endEncoding();
 
     commandBuffer->commit();
     commandBuffer->waitUntilCompleted();
-
-    //encoder->release();
-    //commandBuffer->release();
 }
 //----------------------------------------------------------------------------------------------------------------------
 
