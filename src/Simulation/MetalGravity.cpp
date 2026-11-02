@@ -36,9 +36,9 @@ void MetalGravity::generateRandomConfiguration()
 
         while (true)
         {
-            float x = std::normal_distribution<float>(0.f, mBox.x / 10)(mRandom);
-            float y = std::normal_distribution<float>(0.f, mBox.y / 10)(mRandom);
-            float z = std::normal_distribution<float>(0.f, mBox.z / 10)(mRandom);
+            float x = std::normal_distribution<float>(0.f, mBox.x / 2)(mRandom);
+            float y = std::normal_distribution<float>(0.f, mBox.y / 2)(mRandom);
+            float z = std::normal_distribution<float>(0.f, mBox.z / 2)(mRandom);
 
             float3 p{x, y, z};
 
@@ -244,7 +244,7 @@ void MetalGravity::calculateAcelation(MTL::ComputeCommandEncoder* encoder, MTL::
     encoder->setBytes(&mTheta, sizeof(mTheta), 3);
     //encoder->setBytes(&mR0square, sizeof(mR0square), 4);
 
-    // NEU: Reserviere Speicher für 256 BranchNodes im Threadgroup-Speicher
+    // NEU: Reserviere Speicher für 128 BranchNodes im Threadgroup-Speicher
     // Der Index 0 entspricht dem [[threadgroup(0)]] im Shader
     size_t sharedMemorySize = sizeof(TreeBranch) * 128;
     encoder->setThreadgroupMemoryLength(sharedMemorySize, 0);
@@ -400,6 +400,7 @@ void MetalGravity::reinsertAtoms()
             sub.deleate(oct);
             insertAtomInTree(mTree, mNextAtoms[i].value());
 
+            sub    = Tree::reference(&mTree, rootId);
             auto size = sub.size();
 
             // if the branch is empty

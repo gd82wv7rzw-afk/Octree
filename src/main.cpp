@@ -10,7 +10,7 @@ int main(void) {
     MTL::CommandQueue* queue = device->newCommandQueue();
 
     const unsigned nAtoms  = 1e5;
-    const float freeLength = 1e3;
+    const float freeLength = 1e2;
 
     auto start = std::chrono::steady_clock::now();
     Simulation::MetalGravity gravitySim(device, queue, nAtoms, freeLength);

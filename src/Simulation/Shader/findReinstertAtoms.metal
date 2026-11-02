@@ -28,8 +28,8 @@ kernel void findReinstertAtoms(
     {
         float pos = r[i];
 
-        while( pos < -box_2[i])  pos += box[i]; 
-        while( r[i] >= box_2[i]) pos -= box[i];  
+        if( pos < -box_2[i]) pos += box[i]; 
+        if( pos >= box_2[i]) pos -= box[i];  
         
         atom.value.pos[i] = pos;
     }

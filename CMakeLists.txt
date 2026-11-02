@@ -8,10 +8,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_link_options(-fsanitize=address)
 endif()
 
+set(CMAKE_OBJCXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+#add_compile_options(-fobjc-arc)
+add_compile_options(-Wno-deprecated-declarations -Wno-availability -Wno-deprecated-anon-enum-enum-conversion -Wno-deprecated-enum-enum-conversion)
 
 set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
@@ -39,17 +43,29 @@ FetchContent_MakeAvailable(metal_cpp metal_cpp_extensions)
 # Executable (Jetzt als MACOSX_BUNDLE, damit die GUI funktioniert)
 set(APP_SOURCES
     "${SOURCE_DIR}/main.cpp"
+    #"${SOURCE_DIR}/Gui/App/AppDelegate.mm"
+    #"${SOURCE_DIR}/Gui/App/MainMenu.m"
+    #"${SOURCE_DIR}/Gui/MainWindow/MainWindowDelegate.mm"
+    #"${SOURCE_DIR}/Gui/MainWindow/MetalViewDelegate.mm"
+    #"${SOURCE_DIR}/Gui/MainWindow/Controls/InputViews/MouseInputView.m"
+    #"${SOURCE_DIR}/Gui/MainWindow/Controls/Slider/Slider.mm"
     "${SOURCE_DIR}/MetalImplementation.cpp"
     "${SOURCE_DIR}/SimulatorV0.cpp"
     "${SOURCE_DIR}/MetalStuff/Pipeline/PipelineBuilder.cpp"
     "${SOURCE_DIR}/Simulation/MetalGravity.cpp"
-    # Hier später deine GUI-Dateien hinzufügen, z.B.:
-    # "${SOURCE_DIR}/App/AppDelegate.mm"
-    # "${SOURCE_DIR}/MainWindow/UI/MainMenu.xib"
 )
 
-# WICHTIG: MACOSX_BUNDLE sorgt dafür, dass macOS die App als GUI-App mit Fenster startet
-add_executable(${APP_NAME} MACOSX_BUNDLE ${APP_SOURCES})
+# WICHTIG: RESOURCES muss hier mit übergeben werden!
+add_executable(${APP_NAME} MACOSX_BUNDLE ${APP_SOURCES} ${RESOURCES})
+
+# Automatisch den Projektnamen für das Menü und die App verwenden:
+set_target_properties(${APP_NAME} PROPERTIES
+    MACOSX_BUNDLE_BUNDLE_NAME "${APP_NAME}"
+    MACOSX_BUNDLE_GUI_IDENTIFIER "${APP_NAME}"
+    MACOSX_BUNDLE_INFO_STRING "${APP_NAME}"
+    MACOSX_BUNDLE_PRINCIPAL_CLASS "NSApplication"
+    #MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/MacOSXBundleInfo.plist.in"
+)
 
 # Metal library — jetzt direkt im App Bundle
 set(SHADER_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app/Contents/Resources")
@@ -121,12 +137,12 @@ target_link_libraries(${APP_NAME} PRIVATE ${APPLE_FRAMEWORK_PATHS})
 find_program(XCRUN xcrun REQUIRED)
 
 set(SHADERS
-    src/Octree/Implementation/BufferShader/copy.metal
     src/Simulation/Shader/calculateAccelleration.metal
     src/Simulation/Shader/firstIntegral.metal
     src/Simulation/Shader/updateCenterOfMass.metal
     src/Simulation/Shader/reduseMaxError.metal
     src/Simulation/Shader/findReinstertAtoms.metal
+    src/Octree/Implementation/BufferShader/copy.metal
 )
 
 set(AIR_FILES)
@@ -165,6 +181,6 @@ add_custom_target(compile_shaders DEPENDS "${METALLIB}")
 add_dependencies(${APP_NAME} compile_shaders)
 
 # WICHTIG FÜR GUI: Hier sagen wir CMake, wie es .xib Dateien behandeln soll
-set_source_files_properties(${APP_SOURCES} PROPERTIES
+set_source_files_properties(${RESOURCES} PROPERTIES
     MACOSX_PACKAGE_LOCATION "Resources"
 )

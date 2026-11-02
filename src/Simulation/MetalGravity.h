@@ -4,6 +4,7 @@
 #include "Simulation/Branch.h"
 #include "Octree/Octree.h"
 #include "MetalStuff/MetalArray.hpp"
+#include "MetalStuff/Pipeline/PipelineBuilder.h"
 
 #include <random>
 #include <Metal/Metal.hpp>
@@ -18,6 +19,7 @@ class MetalGravity
         using id_type = Octree::Implementation::MetalTree<Simulation::Atom, Simulation::Branch>::id_type;
         using PipelinePtr = MetalStuff::Pipeline::ComputePipelinePtr;
         using TreeBranch = Octree::Implementation::MetalTree<Simulation::Atom, Simulation::Branch>::branch_type;
+        using TreeLeaf   = Octree::Implementation::MetalTree<Simulation::Atom, Simulation::Branch>::leaf_type;
         
         template< class T>
         using MetalBuffer = Octree::Implementation::MetalBuffer<T>;
@@ -72,7 +74,7 @@ class MetalGravity
         float mTheta{0.8f};
         //--------------------------------------------------------------------------------------------------------------
 
-        float mDt{2.5e-1};
+        float mDt{1e-1};
         //--------------------------------------------------------------------------------------------------------------
 
         Tree                  mTree;
