@@ -510,7 +510,8 @@ void MetalGravity::step()
     //PROFILE_METAL_CALL("updateCenterOfMass", updateCenterOfMass(encoder);)
     updateCenterOfMass(encoder);
 
-    for (int i = 0; i < maxStepps; ++i)
+    int step = 0;
+    for (; step < maxStepps; ++step)
     {
         //PROFILE_METAL_CALL("calculateAcelation", calculateAcelation(encoder, mNextAtoms.metalBuffer());)
         calculateAcelation(encoder, mNextAtoms.metalBuffer());
@@ -546,6 +547,20 @@ void MetalGravity::step()
         oldError = maxError;
     }
 
+    if(step > 4)
+    {
+        mDt *= 0.5;
+        printf("degrease the dt to %11.7e", mDt);
+    }
+    /*
+    if(step < 4)
+    {
+        mDt *= 1.5;
+        printf("increase the dt to %11.7e", mDt);
+    }
+
+    */
+   
     //PROFILE_METAL_CALL("integrateVelosseties", integrateVelosseties(encoder);)
     integrateVelosseties(encoder);
     //encoder->memoryBarrier(MTL::BarrierScopeBuffers);

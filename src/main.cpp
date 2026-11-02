@@ -10,7 +10,7 @@ int main(void) {
     MTL::CommandQueue* queue = device->newCommandQueue();
 
     const unsigned nAtoms  = 1e5;
-    const float freeLength = 1e2;
+    const float freeLength = 1e3;
 
     auto start = std::chrono::steady_clock::now();
     Simulation::MetalGravity gravitySim(device, queue, nAtoms, freeLength);
@@ -20,16 +20,16 @@ int main(void) {
 
     printf("InitTime: %14.7lfs\n", time);
 
-    for ( int i = 0; i < 100000; ++i)
+    for ( int i = 0; i < 1000000; ++i)
     {
-        if (i % 100 == 0) gravitySim.printSnapshot(i);
+        if (i % 1000 == 0) gravitySim.printSnapshot(i);
 
         start = std::chrono::steady_clock::now();
         gravitySim.step();
         end = std::chrono::steady_clock::now();
         time = std::chrono::duration<double, std::micro>(end - start).count() * 1e-6;
 
-        printf("Step: %7i\tTotalTime: %14.7lfs\n", i, time);
+        printf("Step: %7i\tdt:%14.7lf\tTotalTime: %14.7lfs\n", i, gravitySim.dt(), time);
     }
 
     queue->release();
