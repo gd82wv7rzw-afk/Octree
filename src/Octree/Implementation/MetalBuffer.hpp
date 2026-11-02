@@ -56,7 +56,7 @@ class MetalBuffer
         constexpr pointer getPointer(size_type i) noexcept;
         //--------------------------------------------------------------------------------------------------------------
 
-        /// @brief Returns a pointer to the element at the specified index.
+        /// @brief Returns a const pointer to the element at the specified index.
         /// @param i Index of the element.
         /// @return Pointer to the element, or nullptr if the index is invalid or the element has been deleted.
         constexpr const_pointer getPointer(size_type i) const noexcept;
@@ -73,6 +73,8 @@ class MetalBuffer
         constexpr size_type nextIndex() const noexcept  { return mNextIndex == id_type::IndexMask ? mSize : mNextIndex;}
         //--------------------------------------------------------------------------------------------------------------
 
+        /// @brief Returns the total number of allocated elements
+        /// @return the total number of allocated elements
         constexpr size_type capacity() const noexcept { return mSize; }
         //--------------------------------------------------------------------------------------------------------------
 
@@ -88,6 +90,8 @@ class MetalBuffer
         constexpr void deleate(size_type i) noexcept;
         //--------------------------------------------------------------------------------------------------------------
 
+        /// @brief Allocate size elements
+        /// @param size the number of elements
         void allocate(size_type size);
         //--------------------------------------------------------------------------------------------------------------
 
@@ -102,6 +106,8 @@ class MetalBuffer
         MTL::Buffer* mBuffer{nullptr};
         MTL::Device* mDevice;
         MTL::CommandQueue* mQueue;
+
+        /// @brief the capazity
         size_type    mSize{0};
         
         /// @brief Index of the first deleted entry, or IndexMask if none exist.
@@ -114,8 +120,14 @@ class MetalBuffer
 
 // Implementation ------------------------------------------------------------------------------------------------------
 template <class T>
-MetalBuffer<T>::MetalBuffer(MTL::Device* device, MTL::CommandQueue* queue, size_type size)
-    : mDevice(device), mQueue(queue), mSize(size)
+MetalBuffer<T>::MetalBuffer(
+    MTL::Device* device, 
+    MTL::CommandQueue* queue, 
+    size_type size
+)  
+    : mDevice(device)
+    , mQueue(queue)
+    , mSize(size)
 {
     assert(mDevice != nullptr);
 
@@ -307,6 +319,7 @@ MetalBuffer<T>::allocate(size_type size)
 {
     assert(size > mSize && mDevice != nullptr);
 
+    // make a new buffer
     auto tmp = mDevice->newBuffer(size * sizeof(T), MTL::ResourceStorageModeShared);
 
     if (tmp == nullptr)
@@ -314,16 +327,23 @@ MetalBuffer<T>::allocate(size_type size)
         throw std::runtime_error("Failed to create Metal buffer");
     } 
 
-   // std::swap(mBuffer, tmp);
-
+    // copy the old buffer to the new one: sorce, target, size
     if (mSize > 0) copy(mBuffer, tmp, mSize);
 
+    // swap the buffers
     std::swap(mBuffer, tmp);
-    tmp->release();
 
+    // tmp holds the OLD buffer now. Release it safely!
+    if (tmp != nullptr)
+    {
+        tmp->release();
+    }
+
+    // update the capazity
     auto oldSize = mSize;
     mSize = size;
 
+    // build the list of free elements (fifo)
     for (size_type i = size; i > oldSize; --i)
     {
         auto idx = i - 1;
