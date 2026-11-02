@@ -44,6 +44,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/apple/metal-cpp.git
     GIT_TAG main
     GIT_SHALLOW TRUE
+    UPDATE_DISCONNECTED ${METAL_CPP_OFFLINE}
     SOURCE_SUBDIR cmake-no-project
 )
 
@@ -52,6 +53,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/olilarkin/metal-cpp-extensions.git
     GIT_TAG main
     GIT_SHALLOW TRUE
+    UPDATE_DISCONNECTED ${METAL_EXT_OFFLINE}
     SOURCE_SUBDIR cmake-no-project
 )
 
