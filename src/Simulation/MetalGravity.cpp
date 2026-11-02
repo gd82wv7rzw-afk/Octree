@@ -47,7 +47,7 @@ void MetalGravity::generateRandomConfiguration()
                 point = p;
                 break;
             }
-            printf("random point: %f\t%f\n", length(p), length(mBox/2));
+            //printf("random point: %f\t%f\n", length(p), length(mBox/2));
         };  
               
         float3 v1
