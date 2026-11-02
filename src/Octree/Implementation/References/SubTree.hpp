@@ -351,7 +351,7 @@ SubTree<Tree>::deleate(size_type i) noexcept requires(!isConst)
         {
             for (; oct < 8; ++oct) 
             {
-                auto idx = (*it).index(oct);
+                idx = (*it).index(oct);
 
                 if ((*it).isLeaf(oct))
                 {

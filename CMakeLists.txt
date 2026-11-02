@@ -22,6 +22,23 @@ set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 # Dependencies
 include(FetchContent)
 
+# Dependencies
+include(FetchContent)
+
+# Prüfe, ob metal_cpp bereits existiert
+if(EXISTS "${CMAKE_CURRENT_BINARY_DIR}/_deps/metal_cpp-src")
+    set(METAL_CPP_OFFLINE ON)
+else()
+    set(METAL_CPP_OFFLINE OFF)
+endif()
+
+# Prüfe, ob metal_cpp_extensions bereits existiert
+if(EXISTS "${CMAKE_CURRENT_BINARY_DIR}/_deps/metal_cpp_extensions-src")
+    set(METAL_EXT_OFFLINE ON)
+else()
+    set(METAL_EXT_OFFLINE OFF)
+endif()
+
 FetchContent_Declare(
     metal_cpp
     GIT_REPOSITORY https://github.com/apple/metal-cpp.git

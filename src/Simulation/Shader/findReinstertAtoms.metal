@@ -7,7 +7,7 @@ using namespace Simulation;
 kernel void findReinstertAtoms(
     device       LeafNode*   atoms        [[buffer(0)]],
     device const BranchNode* branches     [[buffer(1)]],
-    device       int*        rootSize     [[buffer(2)]],
+    device       int*        state        [[buffer(2)]],
     device       LeafNode*   atomsBackup  [[buffer(3)]],
     constant const float3&   box          [[buffer(4)]],
     uint id                 [[thread_position_in_grid]]
@@ -37,12 +37,12 @@ kernel void findReinstertAtoms(
     atomsBackup[id]  = atom;
     r                = atom.value.pos;
 
-    rootSize[id] = 0;
+    state[id] = 0;
     for( int i = 0; i < 3; ++i) 
     {
         if( r[i] < minPos[i] || r[i] >= maxPos[i])
         {
-            rootSize[id] = 1;         
+            state[id] = 1;         
             break;
         }
     }   

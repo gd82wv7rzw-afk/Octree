@@ -387,6 +387,11 @@ void MetalGravity::findReinsertAtoms(MTL::ComputeCommandEncoder* encoder)
 
 void MetalGravity::reinsertAtoms()
 {
+    // make a state vector
+    std::vector<int> idsToReinsert;
+    idsToReinsert.reserve(mNatoms * 0.01);
+
+    // remove the atoms
     for(int i = 0; i < mNatoms; ++i)
     {
         if( mNeadReinsert[i] > 0)
@@ -398,20 +403,46 @@ void MetalGravity::reinsertAtoms()
 
             //printf("Reinsert atom %d\n", i);
             sub.deleate(oct);
-            insertAtomInTree(mTree, mNextAtoms[i].value());
 
-            sub    = Tree::reference(&mTree, rootId);
+            //insertAtomInTree(mTree, mNextAtoms[i].value());
+            idsToReinsert.push_back(i);
+
+            sub       = Tree::reference(&mTree, rootId);
             auto size = sub.size();
 
-            // if the branch is empty
-            if (size == 0)
+            // only one leaf left, 
+            // the roule is: 2 ore no leaf in a sub, so we have to reinsert the other atom also
+            while (size < 2)
             {
-                //printf("Deleate branch\n");
-                while (size == 0) 
+                if (size == 1)
+                {
+                    int otherId = -1;
+                    for(oct = 0; oct < 8; ++oct) 
+                    { 
+                        if ( sub.size(oct) == 1)
+                        {
+                            assert(sub.isLeaf(oct));
+        
+                            otherId = sub.index(oct);
+                            break;
+                        }
+                    }
+
+                    assert(oct < 8);
+
+                    sub.deleate(oct); 
+
+                    idsToReinsert.push_back(otherId);
+                    mNeadReinsert[otherId] = 0;
+                    --size;
+                }
+
+                // if the branch is empty
+                if (size == 0)
                 {
                     auto parentOct = sub.self().possitonInParent();
                     sub.goUp();
-     
+         
                     if (sub) 
                     { 
                         sub.deleate(parentOct);
@@ -420,13 +451,27 @@ void MetalGravity::reinsertAtoms()
                     else
                     {
                         sub = mTree.root();
-                        break;
+
+                        // now only one or zero leaf left in the root and would be removed at the next iteration
+                        // so we set size artifical to 2 for leafing the loop
+                        size = 2;
                     } 
-                }
-                decrOrder(mTree, sub);  
-            }
+                    decrOrder(mTree, sub);  
+
+                    //sub  = Tree::reference(&mTree, rootId);
+                    //size = sub.size();
+                }  
+            }            
             //printf("done Atom %i\n", i);
         }
+    }
+
+    // reinsert the atoms
+    for (int i = 0; i < idsToReinsert.size(); ++i)
+    {
+        auto idx  = idsToReinsert[i];
+        auto atom = mNextAtoms[idx].value();
+        insertAtomInTree(mTree, atom);
     }
 
     mNextAtoms = *(mTree.leafs());
