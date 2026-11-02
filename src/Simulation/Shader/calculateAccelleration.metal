@@ -22,18 +22,6 @@ float3 calculatePeriodicDistance(thread const float3& a, thread const float3&b, 
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-//float maxDim(const thread float3& x)
-//{
-//    float max = 0;
-//
-//    if (fabs(x.x) > max) max = fabs(x.x);
-//    if (fabs(x.y) > max) max = fabs(x.y);
-//    if (fabs(x.z) > max) max = fabs(x.z);
-//
-//    return max;
-//}
-//----------------------------------------------------------------------------------------------------------------------
-
 float3 grad(const thread float3& x)
 {
     auto r2 = dot(x,x) + 1e-10f;
@@ -264,4 +252,3 @@ kernel void calculateAccelleration(
     }
 }
 //----------------------------------------------------------------------------------------------------------------------
-
