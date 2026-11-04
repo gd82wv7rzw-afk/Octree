@@ -1,6 +1,6 @@
 #include "MetalGravity.h"
 
-#include<list>
+#include <chrono>
 
 using namespace Simulation;
 using namespace simd;
@@ -547,19 +547,30 @@ void MetalGravity::step()
         oldError = maxError;
     }
 
-    if(step > 4)
+    if (step >  mIterationSteps) mIterationSteps = step;
+    ++mCounter;
+
+    if(step > 10)
     {
-        mDt *= 0.5;
-        printf("degrease the dt to %11.7e", mDt);
-    }
-    /*
-    if(step < 4)
-    {
-        mDt *= 1.5;
-        printf("increase the dt to %11.7e", mDt);
+        mDt /= 2;
+        printf("degrease the dt to %11.7f\n", mDt);
     }
 
-    */
+    if(mCounter == 100)
+    {
+        if(mIterationSteps < 4)
+        {
+            mDt *= 2;
+            printf("increase the dt to %11.7f\n", mDt);
+        }
+
+        if(mDt > 15)
+        {
+            mDt = 12.8;
+        }
+        mIterationSteps = 0;
+        mCounter = 0;
+    }
    
     //PROFILE_METAL_CALL("integrateVelosseties", integrateVelosseties(encoder);)
     integrateVelosseties(encoder);
@@ -630,5 +641,26 @@ bool MetalGravity::printSnapshot(int step)
 
     fclose(file);
     return true;
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+void MetalGravity::run()
+{
+    printf("%i\t%f\n", mNatoms, mBox.x);
+
+    int i = 0;
+    while (mIsRunning)
+    {
+        auto startTime = std::chrono::steady_clock::now();
+        step();
+        //sleep(1);
+        auto endTime = std::chrono::steady_clock::now();
+        auto time = std::chrono::duration<double, std::micro>(endTime - startTime).count() * 1e-6;
+
+        printf("Step: %7i\tdt:%14.7lf\tTotalTime: %14.7lfs\n", i, dt(), time);
+
+        ++i;
+    }  
+    
 }
 //----------------------------------------------------------------------------------------------------------------------

@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 3.24)
 
 set(APP_NAME barnesHut)
-project(${APP_NAME} LANGUAGES CXX)
+project(${APP_NAME} LANGUAGES CXX OBJCXX Swift)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_options(-fsanitize=address -g)
-    add_link_options(-fsanitize=address)
+    add_compile_options(
+        $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-fsanitize=address>
+        $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-g>
+    )
+    add_link_options(-sanitize=address)
 endif()
 
 set(CMAKE_OBJCXX_STANDARD_REQUIRED ON)
@@ -13,14 +16,16 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_Swift_LANGUAGE_VERSION 5)
 
-#add_compile_options(-fobjc-arc)
-add_compile_options(-Wno-deprecated-declarations -Wno-availability -Wno-deprecated-anon-enum-enum-conversion -Wno-deprecated-enum-enum-conversion)
+add_compile_options(
+    "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-Wno-deprecated-declarations>"
+    "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-Wno-availability>"
+    "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-Wno-deprecated-anon-enum-enum-conversion>"
+    "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-Wno-deprecated-enum-enum-conversion>"
+)
 
 set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-
-# Dependencies
-include(FetchContent)
 
 # Dependencies
 include(FetchContent)
@@ -61,21 +66,33 @@ FetchContent_MakeAvailable(metal_cpp metal_cpp_extensions)
 
 # Executable (Jetzt als MACOSX_BUNDLE, damit die GUI funktioniert)
 set(APP_SOURCES
-    "${SOURCE_DIR}/main.cpp"
-    #"${SOURCE_DIR}/Gui/App/AppDelegate.mm"
-    #"${SOURCE_DIR}/Gui/App/MainMenu.m"
-    #"${SOURCE_DIR}/Gui/MainWindow/MainWindowDelegate.mm"
-    #"${SOURCE_DIR}/Gui/MainWindow/MetalViewDelegate.mm"
-    #"${SOURCE_DIR}/Gui/MainWindow/Controls/InputViews/MouseInputView.m"
-    #"${SOURCE_DIR}/Gui/MainWindow/Controls/Slider/Slider.mm"
+    #"${SOURCE_DIR}/main.cpp"
     "${SOURCE_DIR}/MetalImplementation.cpp"
     "${SOURCE_DIR}/SimulatorV0.cpp"
     "${SOURCE_DIR}/MetalStuff/Pipeline/PipelineBuilder.cpp"
     "${SOURCE_DIR}/Simulation/MetalGravity.cpp"
+    "${SOURCE_DIR}/Gui/MyApp.swift"
+    "${SOURCE_DIR}/Gui/ContentView.swift"
+    "${SOURCE_DIR}/Gui/AppDelegate/AppDelegate.swift"
+    "${SOURCE_DIR}/Gui/SidePanelView/SidePanelView.swift"
+    "${SOURCE_DIR}/Gui/LogView/LogView.swift"
+    "${SOURCE_DIR}/Gui/MetalView/MetalView.swift"
+    "${SOURCE_DIR}/Gui/MainControler.mm"
 )
 
 # WICHTIG: RESOURCES muss hier mit übergeben werden!
 add_executable(${APP_NAME} MACOSX_BUNDLE ${APP_SOURCES} ${RESOURCES})
+set(SWIFT_BRIDGING_HEADER
+    "${SOURCE_DIR}/Gui/Gui-Bridging-Header.h"
+)
+
+target_compile_options(${APP_NAME} PRIVATE
+    "$<$<COMPILE_LANGUAGE:Swift>:-import-objc-header>"
+    "$<$<COMPILE_LANGUAGE:Swift>:${SWIFT_BRIDGING_HEADER}>"
+)
+target_compile_definitions(${APP_NAME} PRIVATE
+    "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:DEFAULT_METALLIB_PATH=\"${METALLIB}\">"
+)
 
 # Automatisch den Projektnamen für das Menü und die App verwenden:
 set_target_properties(${APP_NAME} PROPERTIES
@@ -89,10 +106,6 @@ set_target_properties(${APP_NAME} PROPERTIES
 # Metal library — jetzt direkt im App Bundle
 set(SHADER_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.app/Contents/Resources")
 set(METALLIB "${SHADER_OUTPUT_DIR}/default.metallib")
-
-target_compile_definitions(${APP_NAME} PRIVATE
-    DEFAULT_METALLIB_PATH="${METALLIB}"
-)
 
 target_include_directories(${APP_NAME} PRIVATE
     "${SOURCE_DIR}"
@@ -132,10 +145,9 @@ set(OpenMP_omp_LIBRARY "${LIBOMP_LIBRARY}")
 
 find_package(OpenMP REQUIRED COMPONENTS CXX)
 
-target_link_libraries(${APP_NAME} PRIVATE OpenMP::OpenMP_CXX)
-
 # Apple frameworks
 set(APPLE_FRAMEWORKS
+    SwiftUI
     Foundation
     AppKit
     Metal
@@ -150,7 +162,14 @@ foreach(FRAMEWORK IN LISTS APPLE_FRAMEWORKS)
     list(APPEND APPLE_FRAMEWORK_PATHS "${${FRAMEWORK}_FRAMEWORK}")
 endforeach()
 
-target_link_libraries(${APP_NAME} PRIVATE ${APPLE_FRAMEWORK_PATHS})
+target_link_libraries(${APP_NAME} PRIVATE 
+    ${APPLE_FRAMEWORK_PATHS}
+    OpenMP::OpenMP_CXX
+)
+target_link_options(${APP_NAME} PRIVATE
+    -Xlinker -no_warn_duplicate_libraries
+)
+
 
 # Metal shaders — paths relative to the project root
 find_program(XCRUN xcrun REQUIRED)
@@ -199,6 +218,6 @@ add_custom_target(compile_shaders DEPENDS "${METALLIB}")
 add_dependencies(${APP_NAME} compile_shaders)
 
 # WICHTIG FÜR GUI: Hier sagen wir CMake, wie es .xib Dateien behandeln soll
-set_source_files_properties(${RESOURCES} PROPERTIES
-    MACOSX_PACKAGE_LOCATION "Resources"
-)
+#set_source_files_properties(${RESOURCES} PROPERTIES
+#    MACOSX_PACKAGE_LOCATION "Resources"
+#)
