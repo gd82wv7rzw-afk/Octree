@@ -223,13 +223,13 @@ void MetalGravity::buildPipelines()
     assert(mDevice != nullptr);
 
     PipelineBuilder builder(mDevice);
-    mCalculateAcelationPipeline = builder.buildCompute("/default.metallib", "calculateAccelleration");
+    mCalculateAcelationPipeline = builder.buildCompute("/default.metallib", "calculateAcceleration");
     mFirstIntegralPipeline = builder.buildCompute("/default.metallib", "firstIntegral");
     mUpdateCenterOfMassPipeline = builder.buildCompute("/default.metallib", "updateCenterOfMass");
     mReduceMaxErrorPipeline = builder.buildCompute("/default.metallib", "reduceMaxError");
     mSecondIntegralPipeline = builder.buildCompute("/default.metallib", "secondIntegralAndErrors");
     mIntegratteVelosetiesPipeline = builder.buildCompute("/default.metallib", "integrateVeloseties");
-    mFindReinsertAtomsPipeline = builder.buildCompute("/default.metallib", "findReinstertAtoms");
+    mFindReinsertAtomsPipeline = builder.buildCompute("/default.metallib", "findReinsertAtoms");
 }
 //----------------------------------------------------------------------------------------------------------------------
 

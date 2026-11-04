@@ -4,7 +4,7 @@
 using namespace metal;
 using namespace Simulation;
 
-kernel void findReinstertAtoms(
+kernel void findReinsertAtoms(
     device       LeafNode*   atoms        [[buffer(0)]],
     device const BranchNode* branches     [[buffer(1)]],
     device       int*        state        [[buffer(2)]],

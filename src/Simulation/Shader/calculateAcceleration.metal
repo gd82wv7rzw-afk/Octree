@@ -115,7 +115,7 @@ void calculateClusterAcceleration(
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-kernel void calculateAccelleration(
+kernel void calculateAcceleration(
     device         Simulation::LeafNode*   atoms          [[buffer(0)]],
     device   const Simulation::BranchNode* branches       [[buffer(1)]],
     constant const float3&                 box            [[buffer(2)]],
