@@ -9,19 +9,66 @@
 #include <unistd.h>
 #include <cstdio>
 #include <string>
+#include <cerrno>
 
 #import <AppKit/AppKit.h>
 
-static void readLogPipe(int fd, MainControler *controller, BOOL isError)
+
+static bool writeAll(int fd, const char* data, size_t size)
 {
-    char buffer[1024];
+    size_t written = 0;
+
+    while (written < size)
+    {
+        ssize_t result = write(
+            fd,
+            data + written,
+            size - written
+        );
+
+        if (result > 0)
+        {
+            written += static_cast<size_t>(result);
+        }
+        else if (result == -1 && errno == EINTR)
+        {
+            continue;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+static void readLogPipe(
+    int fd,
+    int consoleFd,
+    MainControler* controller,
+    BOOL isError)
+{
+    char buffer[4096];
     std::string pending;
 
     ssize_t bytesRead;
 
     while ((bytesRead = read(fd, buffer, sizeof(buffer))) > 0)
     {
-        pending.append(buffer, bytesRead);
+        // 1. Zur ursprünglichen Konsole schreiben
+        writeAll(
+            consoleFd,
+            buffer,
+            static_cast<size_t>(bytesRead)
+        );
+
+        // 2. Für die GUI sammeln
+        pending.append(
+            buffer,
+            static_cast<size_t>(bytesRead)
+        );
 
         size_t pos;
 
@@ -30,7 +77,7 @@ static void readLogPipe(int fd, MainControler *controller, BOOL isError)
             std::string line = pending.substr(0, pos);
             pending.erase(0, pos + 1);
 
-            NSString *message = [[NSString alloc]
+            NSString* message = [[NSString alloc]
                 initWithBytes:line.data()
                 length:line.size()
                 encoding:NSUTF8StringEncoding];
@@ -43,9 +90,10 @@ static void readLogPipe(int fd, MainControler *controller, BOOL isError)
         }
     }
 
+    // Letzten Rest ohne Zeilenumbruch ausgeben
     if (!pending.empty())
     {
-        NSString *message = [[NSString alloc]
+        NSString* message = [[NSString alloc]
             initWithBytes:pending.data()
             length:pending.size()
             encoding:NSUTF8StringEncoding];
@@ -56,6 +104,8 @@ static void readLogPipe(int fd, MainControler *controller, BOOL isError)
             [message release];
         }
     }
+
+    close(fd);
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -96,19 +146,28 @@ static void readLogPipe(int fd, MainControler *controller, BOOL isError)
 
     if (self == nil) { return self; }
 
-    NSString *savedPath = [[NSUserDefaults standardUserDefaults] stringForKey:@"OutputFolder"];
+    // set directories
+    NSString *savedPath = [[NSUserDefaults standardUserDefaults]
+    stringForKey:@"ProjectFolder"];
 
     BOOL isDirectory = NO;
 
-    if (savedPath != nil && 
+    if (savedPath != nil &&
         [[NSFileManager defaultManager] fileExistsAtPath:savedPath isDirectory:&isDirectory] &&
         isDirectory)
     {
-        _parameters.outputFolder = savedPath.UTF8String;
+        _parameters.fileNames.outputFolder = savedPath.UTF8String;
     }
     else
     {
-        _parameters.outputFolder = [NSHomeDirectory()stringByAppendingPathComponent:@"Desktop"].UTF8String;
+        NSString *root = [NSHomeDirectory()
+        stringByAppendingPathComponent:@"Desktop"];
+
+        _parameters.fileNames.defaultRootFolder = root.UTF8String;
+
+        NSString *project = [NSString stringWithUTF8String:_parameters.fileNames.defaultProjectName.c_str()];
+
+        _parameters.fileNames.outputFolder = [[root stringByAppendingPathComponent:project] UTF8String];
     }
 
     _cppDevice = MTL::CreateSystemDefaultDevice();
@@ -218,9 +277,21 @@ static void readLogPipe(int fd, MainControler *controller, BOOL isError)
 }
 //----------------------------------------------------------------------------------------------------------------------
 
+- (NSInteger)atomCount
+{
+    return static_cast<NSInteger>(_parameters.nAtoms);
+}
+//----------------------------------------------------------------------------------------------------------------------
+
 - (void) setFreeLength:(float)freeLength
 {
     _parameters.freeLength = freeLength;
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+- (float)freeLength
+{
+    return _parameters.freeLength;
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -295,9 +366,21 @@ static void readLogPipe(int fd, MainControler *controller, BOOL isError)
 
     isLogging.store(true);
 
-    stdoutThread = std::thread(readLogPipe, stdoutPipe[0], self, NO);
+    stdoutThread = std::thread(
+        readLogPipe,
+        stdoutPipe[0],
+        savedStdout,
+        self,
+        NO
+    );
 
-    stderrThread = std::thread(readLogPipe, stderrPipe[0], self, YES);
+    stderrThread = std::thread(
+        readLogPipe,
+        stderrPipe[0],
+        savedStderr,
+        self,
+        YES
+    );
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -319,12 +402,6 @@ static void readLogPipe(int fd, MainControler *controller, BOOL isError)
 
     stdoutThread.join();
     stderrThread.join();
-
-    close(stdoutPipe[0]);
-    close(stderrPipe[0]);
-
-    stdoutPipe[0] = -1;
-    stderrPipe[0] = -1;
 
     isLogging.store(false);
 }
@@ -361,31 +438,296 @@ static void readLogPipe(int fd, MainControler *controller, BOOL isError)
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-- (BOOL)setOutputFolder
+- (BOOL)loadProject
 {
     NSOpenPanel *panel = [NSOpenPanel openPanel];
+
+    panel.canChooseFiles = NO;
+    panel.canChooseDirectories = YES;
+    panel.canCreateDirectories = NO;
+    panel.allowsMultipleSelection = NO;
+
+    panel.directoryURL = [NSURL fileURLWithPath: [NSString stringWithUTF8String: _parameters.fileNames.defaultRootFolder.c_str()]];
+
+    if ([panel runModal] == NSModalResponseOK)
+    {
+        _parameters.fileNames.outputFolder = panel.URL.path.UTF8String;
+
+        [[NSUserDefaults standardUserDefaults] setObject:panel.URL.path forKey:@"ProjectFolder"];
+
+        printf("Project folder: %s\n", _parameters.fileNames.outputFolder.c_str());
+
+        return YES;
+    }
+
+    return NO;
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+- (BOOL)newProject
+{
+    // Ask for project name
+    NSAlert *nameAlert = [NSAlert new];
+
+    nameAlert.messageText = @"New Project";
+    nameAlert.informativeText = @"Enter a name for the new project.";
+
+    [nameAlert addButtonWithTitle:@"Continue"];
+    [nameAlert addButtonWithTitle:@"Cancel"];
+
+    NSTextField *nameField = [[NSTextField alloc] initWithFrame: NSMakeRect(0, 0, 280, 24)];
+
+    nameField.stringValue = [NSString stringWithUTF8String: _parameters.fileNames.defaultProjectName.c_str()];
+
+    nameAlert.accessoryView = nameField;
+
+    if ([nameAlert runModal] != NSAlertFirstButtonReturn)
+    {
+        [nameField release];
+        [nameAlert release];
+        return NO;
+    }
+
+    NSString *projectName = [nameField.stringValue stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceAndNewlineCharacterSet]];
+
+    [nameField release];
+    [nameAlert release];
+
+    if (projectName.length == 0) return NO;
+
+    // Select parent folder
+    NSOpenPanel *panel = [NSOpenPanel openPanel];
+
+    panel.title = @"New Project";
+    panel.message = @"Choose the parent folder for the new project.";
+    panel.prompt = @"Choose Folder";
 
     panel.canChooseFiles = NO;
     panel.canChooseDirectories = YES;
     panel.canCreateDirectories = YES;
     panel.allowsMultipleSelection = NO;
 
-    panel.directoryURL = [NSURL fileURLWithPath: [NSString stringWithUTF8String:_parameters.outputFolder.c_str()]];
+    panel.directoryURL = [NSURL fileURLWithPath: [NSString stringWithUTF8String: _parameters.fileNames.defaultRootFolder.c_str()]];
 
-    if ([panel runModal] == NSModalResponseOK)
+    if ([panel runModal] != NSModalResponseOK) return NO;
+
+    NSString *rootPath         = panel.URL.path;
+    //NSString *projectName      = [NSString stringWithUTF8String: _parameters.fileNames.defaultProjectName.c_str()];
+    NSString *projectPath      = [rootPath stringByAppendingPathComponent:projectName];
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+
+    BOOL isDirectory = NO;
+
+    if ([fileManager fileExistsAtPath:projectPath isDirectory:&isDirectory])
     {
-        _parameters.outputFolder = panel.URL.path.UTF8String;
+        if (!isDirectory)
+        {
+            NSAlert *alert = [NSAlert new];
+            alert.messageText = @"Project cannot be created";
+            alert.informativeText = @"A file with the project name already exists.";
+            alert.alertStyle = NSAlertStyleWarning;
+            [alert runModal];
+            [alert release];
 
-        [[NSUserDefaults standardUserDefaults]
-            setObject:panel.URL.path
-            forKey:@"OutputFolder"];
+            return NO;
+        }
 
-        printf("Output folder: %s\n", _parameters.outputFolder.c_str());
+        NSAlert *alert = [NSAlert new];
 
-        return YES;
+        alert.messageText = @"Project already exists";
+        alert.informativeText = [NSString stringWithFormat: @"The following folder and all its contents will be deleted:\n\n%@", projectPath];
+
+        alert.alertStyle = NSAlertStyleWarning;
+
+        [alert addButtonWithTitle:@"Overwrite"];
+        [alert addButtonWithTitle:@"Cancel"];
+
+        BOOL overwrite = ([alert runModal] == NSAlertFirstButtonReturn);
+
+        [alert release];
+
+        if (!overwrite) return NO;
+
+        NSError *error = nil;
+
+        if (![fileManager removeItemAtPath:projectPath error:&error])
+        {
+            NSLog(@"Could not remove project folder: %@", error);
+            return NO;
+        }
     }
 
-    return NO;
+    NSError *error = nil;
+
+    if (![fileManager createDirectoryAtPath:projectPath 
+                withIntermediateDirectories:YES
+                                 attributes:nil
+                                      error:&error])
+    {
+        NSLog(@"Could not create project folder: %@", error);
+        return NO;
+    }
+
+    // Update active project
+    _parameters.fileNames.defaultRootFolder = rootPath.UTF8String;
+    _parameters.fileNames.defaultProjectName = projectName.UTF8String;
+    _parameters.fileNames.outputFolder = projectPath.UTF8String;
+
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+
+    [defaults setObject:rootPath forKey:@"ProjectRootFolder"];
+    [defaults setObject:projectPath forKey:@"ProjectFolder"];
+
+    printf("New project: %s\n", _parameters.fileNames.outputFolder.c_str());
+
+    return YES;
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+- (BOOL)setupTrajectoryRecording
+{
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+
+    // Default trajectory folder
+    NSString *defaultPath = [NSString stringWithUTF8String: _parameters.fileNames.trajectoryFolder.c_str()];
+
+    // Choose trajectory folder
+    NSOpenPanel *panel = [NSOpenPanel openPanel];
+    //NSSavePanel *panel = [NSSavePanel savePanel];
+
+    panel.title = @"Trajectory Recording";
+    panel.message = @"Choose the folder for trajectory data.";
+    panel.prompt = @"Use Folder";
+
+    panel.canChooseFiles = NO;
+    panel.canChooseDirectories = YES;
+    panel.canCreateDirectories = YES;
+
+    panel.directoryURL = [NSURL fileURLWithPath: [defaultPath stringByDeletingLastPathComponent]];
+
+    panel.nameFieldStringValue = [defaultPath lastPathComponent];
+
+    if ([panel runModal] != NSModalResponseOK) return NO;
+
+    NSString *trajectoryPath = panel.URL.path;
+
+    // Prevent using the project folder or one of its parent folders
+    NSString *projectPath = [NSString stringWithUTF8String: _parameters.fileNames.outputFolder.c_str()];
+
+    NSString *normalizedProjectPath = projectPath.stringByStandardizingPath;
+    NSString *normalizedTrajectoryPath = trajectoryPath.stringByStandardizingPath;
+
+    if ([normalizedTrajectoryPath isEqualToString:normalizedProjectPath] ||
+        [normalizedProjectPath hasPrefix: [normalizedTrajectoryPath stringByAppendingString:@"/"]])
+    {
+        NSAlert *alert = [NSAlert new];
+ 
+        alert.messageText = @"Invalid trajectory folder";
+        alert.informativeText =
+            @"The trajectory folder must be inside the project folder, not the project folder itself or one of its parent folders.";
+ 
+        [alert runModal];
+        [alert release];
+ 
+        return NO;
+    }
+
+    // Ask for recording frequency
+    NSAlert *frequencyAlert = [NSAlert new];
+
+    frequencyAlert.messageText = @"Trajectory Recording";
+    frequencyAlert.informativeText = @"Record every N-th simulation step.";
+
+    [frequencyAlert addButtonWithTitle:@"Continue"];
+    [frequencyAlert addButtonWithTitle:@"Cancel"];
+
+    NSTextField *frequencyField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 100, 24)];
+
+    frequencyField.stringValue = [NSString stringWithFormat:@"%d", _parameters.trajectoryFrequency];
+
+    frequencyAlert.accessoryView = frequencyField;
+
+    if ([frequencyAlert runModal] != NSAlertFirstButtonReturn)
+    {
+        [frequencyField release];
+        [frequencyAlert release];
+        return NO;
+    }
+
+    NSScanner *scanner = [NSScanner scannerWithString: frequencyField.stringValue];
+
+    NSInteger frequency = 0;
+
+    BOOL validFrequency =
+        [scanner scanInteger:&frequency] &&
+        scanner.isAtEnd &&
+        frequency > 0;
+
+    [frequencyField release];
+    [frequencyAlert release];
+
+    if (!validFrequency)
+    {
+        NSAlert *alert = [NSAlert new];
+        alert.messageText = @"Invalid frequency";
+        alert.informativeText = @"Please enter a positive integer.";
+        [alert runModal];
+        [alert release];
+        return NO;
+    }
+
+    // Check existing trajectory folder
+    BOOL isDirectory = NO;
+
+    if ([fileManager fileExistsAtPath:trajectoryPath isDirectory:&isDirectory])
+    {
+        if (!isDirectory) return NO;
+
+        NSAlert *alert = [NSAlert new];
+
+        alert.messageText = @"Trajectory folder already exists";
+        alert.informativeText = [NSString stringWithFormat: @"The following folder and all its contents will be deleted:\n\n%@", trajectoryPath];
+
+        alert.alertStyle = NSAlertStyleWarning;
+
+        [alert addButtonWithTitle:@"Delete and Continue"];
+        [alert addButtonWithTitle:@"Cancel"];
+
+        BOOL confirmed = ([alert runModal] == NSAlertFirstButtonReturn);
+
+        [alert release];
+
+        if (!confirmed) return NO;
+
+        NSError *error = nil;
+
+        if (![fileManager removeItemAtPath:trajectoryPath error:&error])
+        {
+            NSLog(@"Could not remove trajectory folder: %@", error);
+            return NO;
+        }
+    }
+
+    // Create empty trajectory folder
+    NSError *error = nil;
+
+    if (![fileManager createDirectoryAtPath:trajectoryPath
+                withIntermediateDirectories:YES
+                                 attributes:nil
+                                      error:&error])
+    {
+        NSLog(@"Could not create trajectory folder: %@", error);
+        return NO;
+    }
+
+    // Update parameters
+    _parameters.fileNames.trajectoryFolder = trajectoryPath.UTF8String;
+    _parameters.trajectoryFrequency = static_cast<int>(frequency);
+
+    printf("Trajectory folder: %s\n", _parameters.fileNames.trajectoryFolder.c_str());
+    printf("Trajectory frequency: %d\n", _parameters.trajectoryFrequency);
+
+    return YES;
 }
 //----------------------------------------------------------------------------------------------------------------------
 

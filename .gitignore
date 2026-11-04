@@ -6,6 +6,7 @@
 
 # CMake build directories and generated files
 build/
+xcode/
 cmake-build-*/
 CMakeFiles/
 CMakeCache.txt

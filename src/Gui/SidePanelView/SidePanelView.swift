@@ -26,23 +26,8 @@ struct SidePanelView: View
             {
                 Text("Number of Atoms:").font(.body).foregroundColor(.secondary)
                 Spacer()
-                TextField(
-                    "value",
-                    value: $count, format: .number)
-                    .textFieldStyle(.roundedBorder)
-                    .labelsHidden()
-                    .frame(width: 80)
-                    .multilineTextAlignment(.trailing)
-                    .onChange(of: count)
-                {
-                    oldValue,
-                    newValue in
-                    
-                    if      newValue < 2        {count = 1        }
-                    else if newValue > Int(1e5) {count = Int(1e5) }
 
-                    mainControler.setAtomCount(count)
-                }
+                Text(count.formatted()).frame(width: 80, alignment: .trailing)
             }
             .formStyle(.grouped)
             //----------------------------------------------------------------------------------------------------------
@@ -66,13 +51,12 @@ struct SidePanelView: View
                     "Record Trajectory:",
                     isOn: Binding(
                         get: { recordTrajectory },
-                        set:
-                        {
-                            newValue in
+                        set: { newValue in
     
-                            if newValue
+                            if newValue 
                             {
-                                guard mainControler.setOutputFolder() else { return }
+                                guard mainControler.setupTrajectoryRecording() 
+                                else {return}
                             }
     
                             recordTrajectory = newValue
@@ -80,8 +64,9 @@ struct SidePanelView: View
                         }
                     )
                 )
-                .font(.body).foregroundColor(.secondary)
-                .toggleStyle(.checkbox)   
+                .font(.body)
+                .foregroundColor(.secondary)
+                .toggleStyle(.checkbox) 
    
                 Spacer()
    

@@ -5,47 +5,73 @@ struct LogView: View
     @State private var logMessages: [(message: String, isError: Bool)] = []
     //------------------------------------------------------------------------------------------------------------------
 
+    private var logText: NSAttributedString
+    {
+        let result = NSMutableAttributedString()
+
+        for entry in logMessages
+        {
+            let attributes: [NSAttributedString.Key: Any] = [
+                .foregroundColor: entry.isError
+                    ? NSColor.systemRed
+                    : NSColor.labelColor,
+                .font: NSFont.monospacedSystemFont(
+                    ofSize: 12,
+                    weight: .regular
+                )
+            ]
+
+            result.append(
+                NSAttributedString(
+                    string: entry.message + "\n",
+                    attributes: attributes
+                )
+            )
+        }
+
+        return result
+    }
+    //------------------------------------------------------------------------------------------------------------------
+
     var body: some View
     {
-        ScrollViewReader
+        VStack(spacing: 0)
         {
-            proxy in
+            LogTextView(text: logText)
 
-            ScrollView
+            Divider()
+
+            HStack
             {
-                LazyVStack(alignment: .leading, spacing: 2)
+                Button("Copy All")
                 {
-                    ForEach(logMessages.indices, id: \.self)
-                    {
-                        index in
+                    NSPasteboard.general.clearContents()
 
-                        Text(logMessages[index].message)
-                            .font(.system(.body, design: .monospaced))
-                            .foregroundColor(logMessages[index].isError ? .red : .primary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .textSelection(.enabled)
-                            .id(index)
-                    }
+                    NSPasteboard.general.setString(
+                        logMessages.map(\.message).joined(separator: "\n"),
+                        forType: .string
+                    )
                 }
-                .padding(8)
-            }
-            .onChange(of: logMessages.count)
-            {
-                _, newValue in
 
-                if newValue > 0
+                Button("Save Log")
                 {
-                    proxy.scrollTo(newValue - 1, anchor: .bottom)
+                    saveLog()
                 }
+
+                Spacer()
+
+                Text("\(logMessages.count) lines")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
             }
+            .padding(8)
         }
         .onReceive(
             NotificationCenter.default.publisher(
                 for: Notification.Name("MainControlerDidAppendLog")
             )
         )
-        {
-            notification in
+        { notification in
 
             guard
                 let userInfo = notification.userInfo,
@@ -57,6 +83,110 @@ struct LogView: View
             }
 
             logMessages.append((message, isError))
+        }
+    }
+    //------------------------------------------------------------------------------------------------------------------
+
+    private func saveLog()
+    {
+        let panel = NSSavePanel()
+
+        panel.allowedContentTypes = [.plainText]
+        panel.nameFieldStringValue = "SolverLog.txt"
+
+        panel.begin
+        { response in
+
+            guard response == .OK,
+                  let url = panel.url
+            else
+            {
+                return
+            }
+
+            let content = logMessages
+                .map(\.message)
+                .joined(separator: "\n")
+
+            do
+            {
+                try content.write(
+                    to: url,
+                    atomically: true,
+                    encoding: .utf8
+                )
+            }
+            catch
+            {
+                NSLog("Could not save log: %@", error.localizedDescription)
+            }
+        }
+    }
+    //------------------------------------------------------------------------------------------------------------------
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+struct LogTextView: NSViewRepresentable
+{
+    let text: NSAttributedString
+    //------------------------------------------------------------------------------------------------------------------
+
+    func makeNSView(context: Context) -> NSScrollView
+    {
+        let scrollView = NSScrollView()
+
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
+        scrollView.autohidesScrollers = false
+        scrollView.borderType = .noBorder
+
+        let textView = NSTextView()
+
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.isRichText = false
+        textView.allowsUndo = false
+
+        textView.font = .monospacedSystemFont(
+            ofSize: 12,
+            weight: .regular
+        )
+
+        textView.textContainerInset = NSSize(
+            width: 8,
+            height: 8
+        )
+
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+
+        textView.autoresizingMask = [.width]
+
+        textView.textContainer?.widthTracksTextView = true
+
+        scrollView.documentView = textView
+
+        return scrollView
+    }
+    //------------------------------------------------------------------------------------------------------------------
+
+    func updateNSView(
+        _ scrollView: NSScrollView,
+        context: Context
+    )
+    {
+        guard let textView = scrollView.documentView as? NSTextView
+        else { return }
+
+        let wasAtBottom =
+            scrollView.contentView.bounds.maxY >=
+            scrollView.documentView!.bounds.maxY - 30
+
+        textView.textStorage?.setAttributedString(text)
+
+        if wasAtBottom
+        {
+            textView.scrollToEndOfDocument(nil)
         }
     }
     //------------------------------------------------------------------------------------------------------------------

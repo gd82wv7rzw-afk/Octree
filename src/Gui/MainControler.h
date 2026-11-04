@@ -9,18 +9,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign, readonly, nullable) id<MTLDevice> metalDevice;
 @property (nonatomic, assign, readonly, nullable) id<MTLCommandQueue> commandQueue;
+@property (nonatomic, assign) NSInteger atomCount;
+@property (nonatomic, assign) float freeLength;
 
 - (instancetype) init;
 
 - (void) start;
 - (void) stop;
 
-- (void) setAtomCount:(NSInteger)atomCount;
-- (void) setFreeLength:(float)freeLength;
-
 - (void) appendLog:(NSString *)message isError:(BOOL)isError;
 
-- (BOOL) setOutputFolder;
+- (BOOL)newProject;
+- (BOOL)loadProject;
+- (BOOL)setupTrajectoryRecording;
+
 - (void) setRecordTrajectory:(BOOL)record;
 - (void) setInitialConfiguration:(BOOL)random;
 

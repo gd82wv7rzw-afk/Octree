@@ -2,13 +2,24 @@
 
 namespace Gui {
 
+struct FileNames
+{
+    std::string defaultRootFolder{"~/Desktop"};
+    std::string defaultProjectName{"New Simulation"};
+    std::string outputFolder{defaultRootFolder + "/" + defaultProjectName};
+    std::string trajectoryFolder{defaultRootFolder + "/trj"};
+};
+//----------------------------------------------------------------------------------------------------------------------
+
 struct GuiParameter
 {
     int nAtoms{10};
 
     float freeLength{1e2};
 
-    std::string outputFolder{"~/Desktop"};
+    FileNames fileNames;
+
+    int trajectoryFrequency{100};
 
     bool recordTrajectory{false};
 

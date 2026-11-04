@@ -16,6 +16,18 @@ import SwiftUI
         .commands { SidePanelCommands()}
         .commands { LogCommands() }
         .commands { FileCommands(mainControler: mainControler) }
+        .commands 
+        {
+            FileCommands(mainControler: mainControler)
+            SimulationCommands()
+        }
+        //--------------------------------------------------------------------------------------------------------------
+
+        Settings
+        {
+            SettingsView()
+        }
+        .commandsRemoved()
     }
 }
 //---------------------------------------------------------------------------------------------------------------------
@@ -51,9 +63,33 @@ struct FileCommands: Commands
     {
         CommandGroup(replacing: .newItem)
         {
-            Button("Set Project Folder")
+            Button("New Project")
             {
-                mainControler.setOutputFolder()
+                mainControler.newProject()
+            }
+            .keyboardShortcut("n", modifiers: [.command])
+
+            Button("Load Project")
+            {
+                mainControler.loadProject()
+            }
+            .keyboardShortcut("o", modifiers: [.command])
+        }
+    }
+}
+//---------------------------------------------------------------------------------------------------------------------
+
+struct SimulationCommands: Commands
+{
+    @Environment(\.openSettings) private var openSettings
+
+    var body: some Commands
+    {
+        CommandMenu("Simulation")
+        {
+            Button("Settings…")
+            {
+                openSettings()
             }
         }
     }

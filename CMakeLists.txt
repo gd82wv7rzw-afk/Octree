@@ -64,6 +64,7 @@ set(APP_SOURCES
     "${SOURCE_DIR}/Gui/SidePanelView/SidePanelView.swift"
     "${SOURCE_DIR}/Gui/LogView/LogView.swift"
     "${SOURCE_DIR}/Gui/MetalView/MetalView.swift"
+    "${SOURCE_DIR}/Gui/SettingsView/SettingsView.swift"
     "${SOURCE_DIR}/Gui/MainControler.mm"
 )
 

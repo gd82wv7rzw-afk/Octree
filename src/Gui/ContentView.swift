@@ -26,13 +26,6 @@ struct ContentView: View
             }
             else
             {
-                //VStack
-                //{
-                //    MetalView(mainControler: mainControler)
-                //    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                //}
-                //.frame(minWidth: 800, minHeight: 600)
-                //.frame(maxWidth: .infinity, maxHeight: .infinity)
                 MetalView(mainControler: mainControler)
                     .frame(minWidth: 800, minHeight: 600)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
