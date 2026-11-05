@@ -8,23 +8,27 @@ struct FileNames
     std::string defaultProjectName{"New Simulation"};
     std::string outputFolder{defaultRootFolder + "/" + defaultProjectName};
     std::string trajectoryFolder{defaultRootFolder + "/trj"};
+    std::string startConfig{outputFolder + "/input.xyz"};
+};
+//----------------------------------------------------------------------------------------------------------------------
+
+struct SimulationSettings
+{
+    int nAtoms{int(1e5)};
+    float meanFreeDistance{1e2};
+    bool randomConfiguration{true};
 };
 //----------------------------------------------------------------------------------------------------------------------
 
 struct GuiParameter
 {
-    int nAtoms{10};
-
-    float freeLength{1e2};
-
     FileNames fileNames;
+
+    SimulationSettings simulationSettings;
 
     int trajectoryFrequency{100};
 
     bool recordTrajectory{false};
-
-    bool randomConfiguration{true};
-
 };
 //----------------------------------------------------------------------------------------------------------------------
 

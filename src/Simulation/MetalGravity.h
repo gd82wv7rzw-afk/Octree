@@ -29,10 +29,10 @@ class MetalGravity
         /// @brief the ctor
         /// @param device the metal device (the GPU)
         /// @param que    the commandque
-        MetalGravity(MTL::Device* device, MTL::CommandQueue* que, int nAtoms, float freelength) noexcept;
+        MetalGravity(MTL::Device* device, MTL::CommandQueue* que) noexcept;
         //--------------------------------------------------------------------------------------------------------------
 
-        void generateRandomConfiguration();
+        void generateRandomConfiguration(int nAtoms, float freelength);
         //--------------------------------------------------------------------------------------------------------------
 
         void start() { mIsRunning = true; printf("run\n"); run(); }

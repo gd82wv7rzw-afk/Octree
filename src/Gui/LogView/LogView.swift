@@ -58,6 +58,11 @@ struct LogView: View
                     saveLog()
                 }
 
+                Button("Clear Log")
+                {
+                    logMessages.removeAll()
+                }
+
                 Spacer()
 
                 Text("\(logMessages.count) lines")

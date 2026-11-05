@@ -25,7 +25,7 @@ import SwiftUI
 
         Settings
         {
-            SettingsView()
+            SettingsView(mainControler: mainControler)
         }
         .commandsRemoved()
     }

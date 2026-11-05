@@ -6,28 +6,41 @@ using namespace Simulation;
 using namespace simd;
 using namespace std;
 
-MetalGravity::MetalGravity(MTL::Device* device, MTL::CommandQueue* que, int nAtoms, float freelength) noexcept
+MetalGravity::MetalGravity(MTL::Device* device, MTL::CommandQueue* que) noexcept
     : mDevice{device}
     , mQueue{que}
     , mRandom{std::random_device{}()} 
     , mTree(Tree::branchBuffer_type(device, que), Tree::leafBuffer_type(device,que))
     , mNextAtoms(device, que)
-    , mMaxError(device, nAtoms)
-    , mNeadReinsert(device, nAtoms)
+    //, mMaxError(device, nAtoms)
+    //, mNeadReinsert(device, nAtoms)
 {
-    mNatoms            = nAtoms;
-    const float boxDim = cbrt(1.f*nAtoms) * freelength;
-    mBox = float3{boxDim, boxDim, boxDim};
+    //mNatoms            = nAtoms;
+    //const float boxDim = cbrt(1.f*nAtoms) * freelength;
+    //mBox = float3{boxDim, boxDim, boxDim};
 
     buildPipelines();
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-void MetalGravity::generateRandomConfiguration()
+void MetalGravity::generateRandomConfiguration(int nAtoms, float freelength)
 {
+    // set the parameter
+    mNatoms = nAtoms;
+    const float boxDim = cbrt(1.f*nAtoms) * freelength;
+    mBox = float3{boxDim, boxDim, boxDim};
+
     // allocate memory
-    mTree.branches()->allocate(mNatoms / 2);
-    mTree.leafs()->allocate(mNatoms);
+    Tree tmp(Tree::branchBuffer_type(mDevice, mQueue), Tree::leafBuffer_type(mDevice, mQueue));
+    tmp.branches()->allocate(mNatoms / 2);
+    tmp.leafs()->allocate(mNatoms);
+
+    mTree = std::move(tmp);
+
+    printf("n: %i\t l: %f\n", mNatoms, mBox.x);
+
+    mMaxError.allocate(mDevice, mNatoms);
+    mNeadReinsert.allocate(mDevice, mNatoms);
 
     // generate random points and veloseties inside the box
     for (int i = 0; i < mNatoms; ++i) 

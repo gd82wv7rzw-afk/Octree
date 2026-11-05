@@ -12,7 +12,9 @@
 #include <cerrno>
 
 #import <AppKit/AppKit.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
+MainControlerNotification const MainControlerParametersDidChangeNotification = @"MainControlerParametersDidChangeNotification";
 
 static bool writeAll(int fd, const char* data, size_t size)
 {
@@ -121,6 +123,8 @@ static void readLogPipe(
     std::thread _worker;
     Gui::GuiParameter _parameters;
 
+    std::atomic_bool _hasValidSetup; 
+
     int stdoutPipe[2];
     int stderrPipe[2];
 
@@ -194,6 +198,9 @@ static void readLogPipe(
 
     isLogging.store(false);
 
+    // at the beginning we dusn't hav a valid setup
+    _hasValidSetup.store(false);
+
     stdoutPipe[0] = stdoutPipe[1] = -1;
     stderrPipe[0] = stderrPipe[1] = -1;
 
@@ -203,33 +210,76 @@ static void readLogPipe(
     [self startLogCapture];
 
     // simulation
-    //printf("natoms: %i\t free length: %f\n", _parameters.nAtoms, _parameters.freeLength);
-    _metalSimulation = std::make_unique<Simulation::MetalGravity>(_cppDevice, _commandQueue, _parameters.nAtoms, _parameters.freeLength);
+    _metalSimulation = std::make_unique<Simulation::MetalGravity>(_cppDevice, _commandQueue);
 
     return self;
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-- (void)start
+- (void)generateRandomConfiguration
 {
-    // Hier später die C++-Simulation mit atomCount starten.
-    // TODO take the parameter from the gui
-    //
-    if (_worker.joinable()) return;
+    // if the thread is working we go back
+    if (_isRunning.load()) return;
+
+    if (_worker.joinable()) _worker.join();
 
     auto* simulation = _metalSimulation.get();
+    int nAtoms = [self atomCount];
+    float freeLength = [self freeLength];
+    auto* running = &_isRunning;
+    auto* isValid = &_hasValidSetup;
+    MainControler* controller = self;
 
-    _worker = std::thread([simulation]()
+    running->store(true);
+
+    _worker = std::thread([simulation, nAtoms, freeLength, running, isValid, controller]()
+    {
+        printf("Configuration generation started\n");
+        fflush(stdout);
+
+        simulation->generateRandomConfiguration(nAtoms, freeLength);
+        isValid->store(true);
+
+        dispatch_async(dispatch_get_main_queue(), ^
+        {
+            [[NSNotificationCenter defaultCenter]
+            postNotificationName:@"MainControlerSetupDidChange"
+            object:controller];
+        });
+
+        printf("Configuration generation finished\n");
+        fflush(stdout);
+
+        running->store(false);
+    });
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+- (void)start
+{
+    // If the thread is working, we return.
+    if (_isRunning.load()) return;
+
+    if (_worker.joinable()) _worker.join();
+
+    auto* simulation = _metalSimulation.get();
+    auto* running = &_isRunning;
+
+    running->store(true);
+
+    _worker = std::thread([simulation, running]()
     {
         printf("Worker started\n");
         fflush(stdout);
 
-        simulation->generateRandomConfiguration();
+        //simulation->generateRandomConfiguration();
  
         simulation->start();
  
         printf("Worker stopped\n");
         fflush(stdout);
+
+        running->store(false);
     });
 
     printf("MainControler: Start\n");
@@ -238,9 +288,10 @@ static void readLogPipe(
 
 - (void)stop 
 {
-    // Hier später die C++-Simulation stoppen.
+    // Stop the simulation.
     _metalSimulation->stop();
-    
+
+    // Wait for the worker to finish.
     if (_worker.joinable())
     {
         _worker.join();
@@ -272,26 +323,34 @@ static void readLogPipe(
 
 - (void) setAtomCount:(NSInteger)atomCount
 {
-    _parameters.nAtoms = static_cast<int>(atomCount);
-    printf("Atom Count: %d\n", _parameters.nAtoms);
+    _parameters.simulationSettings.nAtoms = static_cast<int>(atomCount);
+    [[NSNotificationCenter defaultCenter] postNotificationName:MainControlerParametersDidChangeNotification object:self];
+    printf("Atom Count: %d\n", _parameters.simulationSettings.nAtoms);
 }
 //----------------------------------------------------------------------------------------------------------------------
 
 - (NSInteger)atomCount
 {
-    return static_cast<NSInteger>(_parameters.nAtoms);
+    return static_cast<NSInteger>(_parameters.simulationSettings.nAtoms);
 }
 //----------------------------------------------------------------------------------------------------------------------
 
 - (void) setFreeLength:(float)freeLength
 {
-    _parameters.freeLength = freeLength;
+    _parameters.simulationSettings.meanFreeDistance = freeLength;
+    printf("freeLength: %f\n", _parameters.simulationSettings.meanFreeDistance);
 }
 //----------------------------------------------------------------------------------------------------------------------
 
 - (float)freeLength
 {
-    return _parameters.freeLength;
+    return _parameters.simulationSettings.meanFreeDistance;
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+- (BOOL)hasValidSetup
+{
+    return _hasValidSetup.load();
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -592,15 +651,15 @@ static void readLogPipe(
     NSString *defaultPath = [NSString stringWithUTF8String: _parameters.fileNames.trajectoryFolder.c_str()];
 
     // Choose trajectory folder
-    NSOpenPanel *panel = [NSOpenPanel openPanel];
-    //NSSavePanel *panel = [NSSavePanel savePanel];
+    //NSOpenPanel *panel = [NSOpenPanel openPanel];
+    NSSavePanel *panel = [NSSavePanel savePanel];
 
     panel.title = @"Trajectory Recording";
     panel.message = @"Choose the folder for trajectory data.";
     panel.prompt = @"Use Folder";
 
-    panel.canChooseFiles = NO;
-    panel.canChooseDirectories = YES;
+    //panel.canChooseFiles = NO;
+    //panel.canChooseDirectories = YES;
     panel.canCreateDirectories = YES;
 
     panel.directoryURL = [NSURL fileURLWithPath: [defaultPath stringByDeletingLastPathComponent]];
@@ -739,8 +798,39 @@ static void readLogPipe(
 
 - (void)setInitialConfiguration:(BOOL)random
 {
-    _parameters.randomConfiguration = random;
-    printf("Random configuration: %s\n", _parameters.randomConfiguration ? "YES" : "NO");
+    _parameters.simulationSettings.randomConfiguration = random;
+    printf("Random configuration: %s\n", _parameters.simulationSettings.randomConfiguration ? "YES" : "NO");
 }
 //----------------------------------------------------------------------------------------------------------------------
+
+- (BOOL)selectStartConfiguration
+{
+    NSOpenPanel *panel = [NSOpenPanel openPanel];
+
+    panel.title = @"Select Initial Configuration";
+    panel.prompt = @"Select";
+    panel.canChooseFiles = YES;
+    panel.canChooseDirectories = NO;
+    panel.allowsMultipleSelection = NO;
+
+    panel.allowedContentTypes = @[ [UTType typeWithFilenameExtension:@"xyz"]];
+
+    // Start in the default configuration folder
+    NSString *defaultPath = [NSString stringWithUTF8String: _parameters.fileNames.startConfig.c_str()];
+
+    panel.directoryURL = [NSURL fileURLWithPath: [defaultPath stringByDeletingLastPathComponent]];
+
+    panel.nameFieldStringValue = [defaultPath lastPathComponent];
+
+    // Dialog öffnen
+    NSModalResponse response = [panel runModal];
+
+    if (response != NSModalResponseOK) return NO;
+
+    _parameters.fileNames.startConfig = std::string(panel.URL.path.UTF8String);
+
+    return YES;
+}
+//----------------------------------------------------------------------------------------------------------------------
+
 @end

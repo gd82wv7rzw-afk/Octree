@@ -9,12 +9,19 @@ import SwiftUI
 
 struct SidePanelView: View
 {
-    @State private var count: Int = Int(1e3)
+    @State private var atomCount: Int
     @State private var run:  Bool = false
-    @State private var recordTrajectory: Bool = false
-    @State private var initialConfiguration = "random"
+    @State private var recordTrajectory: Bool = false    
+    @State private var hasValidSetup = false
     let mainControler: MainControler
     //@State private var mainControler = MainControler()
+    //------------------------------------------------------------------------------------------------------------------
+
+    init(mainControler: MainControler)
+    {
+        self.mainControler = mainControler
+        _atomCount = State(initialValue: Int(mainControler.atomCount))
+    }
     //------------------------------------------------------------------------------------------------------------------
 
     var body: some View
@@ -27,21 +34,17 @@ struct SidePanelView: View
                 Text("Number of Atoms:").font(.body).foregroundColor(.secondary)
                 Spacer()
 
-                Text(count.formatted()).frame(width: 80, alignment: .trailing)
+                Text(atomCount.formatted(IntegerFormatStyle<Int>(locale: Locale(identifier: "en_US_POSIX"))))
             }
             .formStyle(.grouped)
-            //----------------------------------------------------------------------------------------------------------
-
-            Picker("Initial Configuration", selection: $initialConfiguration)
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: .MainControlerParametersDidChange,
+                    object: mainControler
+                )
+            )
             {
-                Text("Random configuration").tag("random").font(.body).foregroundColor(.secondary)
-                Text("Load configuration from file…").tag("file").font(.body).foregroundColor(.secondary)
-            }
-            .font(.body).foregroundColor(.secondary)
-            .pickerStyle(.radioGroup)
-            .onChange(of: initialConfiguration)
-            {
-                mainControler.setInitialConfiguration(initialConfiguration == "random")
+                _ in atomCount = Int(mainControler.atomCount)
             }
             //----------------------------------------------------------------------------------------------------------
 
@@ -93,6 +96,12 @@ struct SidePanelView: View
                 //.frame(width: 80)                
             }
             .formStyle(.grouped)
+            .disabled(!hasValidSetup)
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MainControlerSetupDidChange")))
+            {
+                 _ in
+                hasValidSetup = mainControler.hasValidSetup
+            }
             //----------------------------------------------------------------------------------------------------------
         }
         .formStyle(.grouped)

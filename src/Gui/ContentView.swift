@@ -50,19 +50,15 @@ struct ContentView: View
             }
         }
         .toolbar(isFullscreen ? .hidden : .visible, for: .windowToolbar)
-        .onReceive(
-            NotificationCenter.default.publisher(
-                for: NSWindow.didEnterFullScreenNotification
-            )
-        ) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEnterFullScreenNotification)) 
+        { 
+            _ in
             isFullscreen = true
             isToolbarVisible = false
         }
-        .onReceive(
-            NotificationCenter.default.publisher(
-                for: NSWindow.didExitFullScreenNotification
-            )
-        ) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didExitFullScreenNotification)) 
+        { 
+            _ in
             isFullscreen = false
             isToolbarVisible = false
         }

@@ -33,13 +33,7 @@ public:
 
 public:
 
-    explicit MetalArray(MTL::Device* device, size_t count)
-        : mSize(count)
-        , mBuffer(device->newBuffer(sizeof(T) * count,MTL::ResourceStorageModeShared))
-    {
-        if (!mBuffer) throw std::runtime_error("Failed to create Metal buffer");
-        memset(mBuffer->contents(), 0, mSize * sizeof(T));
-    }
+    explicit MetalArray() = default;
     //------------------------------------------------------------------------------------------------------------------
 
     ~MetalArray() = default;
@@ -57,7 +51,8 @@ public:
     MetalArray& operator=(MetalArray&&) noexcept = default;
     //------------------------------------------------------------------------------------------------------------------
 
-public:
+    inline void allocate(MTL::Device* device, size_t count);
+    //------------------------------------------------------------------------------------------------------------------
 
     [[nodiscard]] inline pointer data() noexcept { return reinterpret_cast<pointer>( mBuffer->contents()); }
     //------------------------------------------------------------------------------------------------------------------
@@ -121,4 +116,17 @@ private:
     size_t    mSize {0};
     BufferPtr mBuffer;
 };
+//----------------------------------------------------------------------------------------------------------------------
+
+template<typename T>
+inline void 
+MetalArray<T>::allocate(MTL::Device* device, size_t count)
+{
+    mSize = count;
+    mBuffer.reset(device->newBuffer(sizeof(T) * count,MTL::ResourceStorageModeShared));
+    {
+        if (!mBuffer) throw std::runtime_error("Failed to create Metal buffer");
+        memset(mBuffer->contents(), 0, mSize * sizeof(T));
+    }
+}
 //----------------------------------------------------------------------------------------------------------------------
