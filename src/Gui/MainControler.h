@@ -20,6 +20,7 @@ FOUNDATION_EXPORT MainControlerNotification const MainControlerParametersDidChan
 - (instancetype) init;
 
 - (void) generateRandomConfiguration;
+- (void) readInputConfiguration;
 - (void) start;
 - (void) stop;
 

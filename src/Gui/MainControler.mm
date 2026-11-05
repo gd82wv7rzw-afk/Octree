@@ -255,6 +255,44 @@ static void readLogPipe(
 }
 //----------------------------------------------------------------------------------------------------------------------
 
+- (void)readInputConfiguration
+{
+    // if the thread is working we go back
+    if (_isRunning.load()) return;
+
+    if (_worker.joinable()) _worker.join();
+
+    auto* simulation = _metalSimulation.get();
+    const char* fileName = _parameters.fileNames.startConfig.c_str();
+ 
+    auto* running = &_isRunning;
+    auto* isValid = &_hasValidSetup;
+    MainControler* controller = self;
+
+    running->store(true);
+
+    _worker = std::thread([simulation, fileName, running, isValid, controller]()
+    {
+        printf("Configuration reading started\n");
+        fflush(stdout);
+
+        isValid->store(simulation->readFile(fileName));
+
+        dispatch_async(dispatch_get_main_queue(), ^
+        {
+            [[NSNotificationCenter defaultCenter]
+            postNotificationName:@"MainControlerSetupDidChange"
+            object:controller];
+        });
+
+        printf("Configuration reading finished\n");
+        fflush(stdout);
+
+        running->store(false);
+    });
+}
+//----------------------------------------------------------------------------------------------------------------------
+
 - (void)start
 {
     // If the thread is working, we return.

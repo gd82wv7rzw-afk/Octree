@@ -37,8 +37,6 @@ void MetalGravity::generateRandomConfiguration(int nAtoms, float freelength)
 
     mTree = std::move(tmp);
 
-    printf("n: %i\t l: %f\n", mNatoms, mBox.x);
-
     mMaxError.allocate(mDevice, mNatoms);
     mNeadReinsert.allocate(mDevice, mNatoms);
 
@@ -610,6 +608,75 @@ void MetalGravity::step()
     //time = std::chrono::duration<double, std::micro>(end - start).count() * 1e-6;
 
     //printf("%-30s Time: %14.7lfs\n", "reinsertAtoms", time);
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+bool MetalGravity::readFile(const char* fname)
+{
+    FILE* file = fopen(fname, "rb");
+    float rx, ry, rz;
+    float vx, vy, vz;
+
+    if (!file)
+    {
+        fprintf(stderr, "Error: Can't read file: %s\n", fname);
+        return false;
+    }
+
+    if (fscanf(file, "%d", &mNatoms) != 1)
+    {
+        fclose(file);
+        return false;
+    }
+
+    if (fscanf(file, "%*s %f %f %f", &rx, &ry, &rz) != 3)
+    {
+        fclose(file);
+        return false;
+    }
+
+    mBox = float3{rx, ry, rz};
+
+    // allocate memory
+    Tree tmp(Tree::branchBuffer_type(mDevice, mQueue), Tree::leafBuffer_type(mDevice, mQueue));
+    tmp.branches()->allocate(mNatoms / 2);
+    tmp.leafs()->allocate(mNatoms);
+
+    mTree = std::move(tmp);
+
+    mMaxError.allocate(mDevice, mNatoms);
+    mNeadReinsert.allocate(mDevice, mNatoms);
+
+    // read the atoms and insert they
+    for (int i = 0; i < mNatoms; ++i)
+    {
+        if (fscanf(file, "%*s %f %f %f %f %f %f", &rx, &ry, &rz, &vx, &vy, &vz) != 6)
+        {
+            fclose(file);
+            return false;
+        }
+        else
+        {
+            insertAtomInTree(mTree, Atom({rx, ry, rz}, {vx, vy, vz}, {0.f, 0.f, 0.f}));
+        }
+    }
+
+    fclose(file);
+
+    mNextAtoms = *(mTree.leafs());
+
+    //accelaeration
+    auto* commandBuffer = mQueue->commandBuffer();
+    auto* encoder       = commandBuffer->computeCommandEncoder();
+
+    updateCenterOfMass(encoder);
+    calculateAcelation(encoder, mTree.leafs()->metalBuffer());
+
+    encoder->endEncoding();
+    commandBuffer->commit();
+    commandBuffer->waitUntilCompleted();
+    
+    return true;
 }
 //----------------------------------------------------------------------------------------------------------------------
 

@@ -17,7 +17,7 @@ struct SettingsView: View
     let mainControler: MainControler
 
     private let minAtoms = 1
-    private let maxAtoms = 100_000
+    private let maxAtoms = Int(1e6)
     //------------------------------------------------------------------------------------------------------------------
 
     init(mainControler: MainControler)
@@ -144,7 +144,7 @@ struct SettingsView: View
                 }
                 else
                 {
-                    // TODO: Simulator initialisieren mit file read
+                    mainControler.readInputConfiguration();
                 }
             }
         }

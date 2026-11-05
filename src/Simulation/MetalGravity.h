@@ -33,6 +33,7 @@ class MetalGravity
         //--------------------------------------------------------------------------------------------------------------
 
         void generateRandomConfiguration(int nAtoms, float freelength);
+        bool readFile(const char* filename);
         //--------------------------------------------------------------------------------------------------------------
 
         void start() { mIsRunning = true; printf("run\n"); run(); }
