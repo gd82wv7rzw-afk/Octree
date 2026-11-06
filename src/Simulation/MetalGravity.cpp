@@ -1,4 +1,5 @@
 #include "MetalGravity.h"
+#include "Gui/GuiParameter.h"
 
 #include <chrono>
 
@@ -561,27 +562,28 @@ void MetalGravity::step()
     if (step >  mIterationSteps) mIterationSteps = step;
     ++mCounter;
 
+    // securety step control
     if(step > 10)
     {
         mDt /= 2;
         printf("degrease the dt to %11.7f\n", mDt);
     }
 
-    if(mCounter == 100)
-    {
-        if(mIterationSteps < 4)
-        {
-            mDt *= 2;
-            printf("increase the dt to %11.7f\n", mDt);
-        }
+//  if(mCounter == 100)
+//  {
+//      if(mIterationSteps < 4)
+//      {
+//          mDt *= 2;
+//          printf("increase the dt to %11.7f\n", mDt);
+//      }
 
-        if(mDt > 15)
-        {
-            mDt = 12.8;
-        }
-        mIterationSteps = 0;
-        mCounter = 0;
-    }
+//      if(mDt > 15)
+//      {
+//          mDt = 12.8;
+//      }
+//      mIterationSteps = 0;
+//      mCounter = 0;
+//  }
    
     //PROFILE_METAL_CALL("integrateVelosseties", integrateVelosseties(encoder);)
     integrateVelosseties(encoder);
@@ -680,28 +682,18 @@ bool MetalGravity::readFile(const char* fname)
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-bool MetalGravity::printSnapshot(int step)
+bool MetalGravity::printSnapshot(const std::string& path, int step)
 {
     char fname[512];
-    char cwd[512];
-    //snprintf(fname, 512, "%s/step_%09i.xyz", step);
-    FILE* file = nullptr;
 
-    if (getcwd(cwd, sizeof(cwd)) != nullptr) 
-    {
-        snprintf(fname, 512, "%s/step_%09i.xyz", cwd, step);
+    snprintf(fname, 512, "%s/step_%09i.xyz", path.c_str(), step);
 
-        file = fopen(fname, "w");
-        if(file == nullptr) return false;
-    } 
-    else 
+    FILE* file = fopen(fname, "w");
+    if(file == nullptr)
     {
-        fprintf(stderr, "could not open file!\n");
+        fprintf(stderr, "Error: Could not open file: %s\n", fname);
         return false;
     }
-
-    //FILE* file = fopen(fname, "w");
-    //if(file == nullptr) return false;
 
     fprintf(file, "%i\n", mNatoms);
     fprintf(file, "Box: %14.7e\t%14.7e\t%14.7e\n", mBox.x, mBox.y, mBox.z);
@@ -724,22 +716,27 @@ bool MetalGravity::printSnapshot(int step)
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-void MetalGravity::run()
+void MetalGravity::run(Gui::GuiParameter* parameters)
 {
-    printf("%i\t%f\n", mNatoms, mBox.x);
+    bool record  = parameters->recordTrajectory;
+    int  recFreq = parameters->trajectoryFrequency;
+    auto dir     = parameters->fileNames.trajectoryFolder;
 
-    int i = 0;
     while (mIsRunning)
     {
+        if (record && (mStep %recFreq == 0))
+        {
+            printSnapshot(dir, mStep);
+        }
         auto startTime = std::chrono::steady_clock::now();
         step();
         //sleep(1);
         auto endTime = std::chrono::steady_clock::now();
         auto time = std::chrono::duration<double, std::micro>(endTime - startTime).count() * 1e-6;
 
-        printf("Step: %7i\tdt:%14.7lf\tTotalTime: %14.7lfs\n", i, dt(), time);
+        printf("Step: %7i\tdt:%14.7lf\tTotalTime: %14.7lfs\n", mStep, dt(), time);
 
-        ++i;
+        ++mStep;
     }  
     
 }

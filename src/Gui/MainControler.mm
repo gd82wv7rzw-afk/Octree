@@ -302,17 +302,18 @@ static void readLogPipe(
 
     auto* simulation = _metalSimulation.get();
     auto* running = &_isRunning;
+    auto* param = &_parameters;
 
     running->store(true);
 
-    _worker = std::thread([simulation, running]()
+    _worker = std::thread([simulation, running, param]()
     {
         printf("Worker started\n");
         fflush(stdout);
 
         //simulation->generateRandomConfiguration();
  
-        simulation->start();
+        simulation->start(param);
  
         printf("Worker stopped\n");
         fflush(stdout);

@@ -9,6 +9,8 @@
 #include <random>
 #include <Metal/Metal.hpp>
 
+namespace Gui {struct GuiParameter;}
+
 namespace Simulation {
 
 class MetalGravity 
@@ -36,9 +38,9 @@ class MetalGravity
         bool readFile(const char* filename);
         //--------------------------------------------------------------------------------------------------------------
 
-        void start() { mIsRunning = true; printf("run\n"); run(); }
+        void start(Gui::GuiParameter* parameters) { mIsRunning = true; printf("run\n"); run(parameters); }
         void stop()  { mIsRunning = false; }
-        void run();
+        void run(Gui::GuiParameter* parameters);
         //--------------------------------------------------------------------------------------------------------------
         
         void step();
@@ -47,7 +49,7 @@ class MetalGravity
         float dt() const {return mDt;}
         //--------------------------------------------------------------------------------------------------------------
 
-        bool printSnapshot(int step);
+        bool printSnapshot(const std::string& path, int step);
         //--------------------------------------------------------------------------------------------------------------
 
         auto* tree()       noexcept {return &mTree;}
@@ -86,9 +88,10 @@ class MetalGravity
         float mTheta{0.8f};
         //--------------------------------------------------------------------------------------------------------------
 
-        float mDt{12.8f};
+        float mDt{0.1f};
         int mIterationSteps{0};
         int mCounter{0};
+        int mStep{0};
         //--------------------------------------------------------------------------------------------------------------
 
         Tree                  mTree;
