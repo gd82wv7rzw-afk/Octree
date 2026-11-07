@@ -67,6 +67,9 @@ set(APP_SOURCES
     "${SOURCE_DIR}/Gui/SettingsView/SettingsView.swift"
     "${SOURCE_DIR}/Gui/MainControler.mm"
     "${SOURCE_DIR}/Rendering/Renderer.cpp"
+    "${SOURCE_DIR}/Rendering/Meshes/Mesh.cpp"
+    "${SOURCE_DIR}/Rendering/Meshes/Icosphere.cpp"
+    "${SOURCE_DIR}/Rendering/mtlm.cpp"
     "${SOURCE_DIR}/MetalStuff/Pipeline/VertexDescriptorFactory.cpp"
     "${SOURCE_DIR}/Rendering/TripleBuffer.cpp"
 )

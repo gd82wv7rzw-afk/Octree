@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Rendering/Vertices.h"
 #include "MetalStuff/Pipeline/PipelineDescription.h"
 
 #include <Metal/Metal.hpp>
@@ -37,6 +38,7 @@ class PipelineBuilder {
         MetalStuff::Pipeline::RenderPipelinePtr buildRender(
             MTL::PixelFormat pixelformat,
             MTL::PixelFormat depthPixelformat,
+            Rendering::VertexFormat format,
             uint32_t sampleCount,
             const char* filepath,
             const char* vertexName,

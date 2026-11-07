@@ -177,7 +177,8 @@ void Renderer::buildPipeline()
 
     mPipeline = builder.buildRender(
         mPixelFormat, 
-        MTL::PixelFormatDepth32Float, 
+        MTL::PixelFormatDepth32Float,
+        VertexFormat::PNVertex, 
         mSampleCount, 
         "/default.metallib", 
         "vertexMain", 

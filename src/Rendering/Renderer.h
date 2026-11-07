@@ -2,7 +2,7 @@
 
 #include "MetalStuff/Pipeline/PipelineBuilder.h"
 #include "MetalStuff/MetalArray.hpp"
-#include "Rendering/Vertex.h"
+#include "Rendering/Vertices.h"
 
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
@@ -14,7 +14,7 @@ class Renderer
 {
     public:
  
-        using Buffer = MetalArray<RenderVertex>;
+        using Buffer = MetalArray<SimulationVertex>;
 
         Renderer( MTL::Device* device, MTL::CommandQueue* commandQueue);
 

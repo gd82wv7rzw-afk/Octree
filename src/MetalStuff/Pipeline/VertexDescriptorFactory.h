@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Rendering/Vertex.h"
+#include "Rendering/Vertices.h"
 #include <memory>
 
 namespace MTL { class VertexDescriptor; }
@@ -31,7 +31,7 @@ public:
     /// @brief Creates a Metal vertex descriptor for the given format.
     /// @param format Engine vertex format.
     /// @return Owning RAII pointer to a configured descriptor.
-    static VertexDescriptorPtr create();//VertexFormat format);
+    static VertexDescriptorPtr create(Rendering::VertexFormat format);
 };
 //----------------------------------------------------------------------------------------------------------------------
 

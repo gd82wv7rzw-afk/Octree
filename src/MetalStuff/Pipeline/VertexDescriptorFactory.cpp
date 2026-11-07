@@ -22,37 +22,111 @@ namespace
     }
     //-------------------------------------------------------------------------------------------------------------------
 
-    void setVertexAttributes(MTL::VertexDescriptor* vd)
+    void setPNAttributes(MTL::VertexDescriptor* vd)
     {
         auto attributes = vd->attributes();
 
         auto pos = attributes->object(0);
         pos->setFormat(MTL::VertexFormatFloat3);
         pos->setBufferIndex(0);
-        pos->setOffset(offsetof(Rendering::RenderVertex, pos));
+        pos->setOffset(offsetof(Rendering::PNVertex, position));
 
-        auto vel = attributes->object(1);
-        vel->setFormat(MTL::VertexFormatFloat3);
-        vel->setBufferIndex(0);
-        vel->setOffset(offsetof(Rendering::RenderVertex, vel));
+        auto norm = attributes->object(1);
+        norm->setFormat(MTL::VertexFormatFloat3);
+        norm->setBufferIndex(0);
+        norm->setOffset(offsetof(Rendering::PNVertex, normal));
+    }
+    //-------------------------------------------------------------------------------------------------------------------
 
-        auto acc = attributes->object(2);
-        acc->setFormat(MTL::VertexFormatFloat3);
-        acc->setBufferIndex(0);
-        acc->setOffset(offsetof(Rendering::RenderVertex, acc));
+    void setPNTAttributes(MTL::VertexDescriptor* vd)
+    {
+        auto attributes = vd->attributes();
+
+        auto pos = attributes->object(0);
+        pos->setFormat(MTL::VertexFormatFloat3);
+        pos->setBufferIndex(0);
+        pos->setOffset(offsetof(Rendering::PNTVertex, position));
+
+        auto norm = attributes->object(1);
+        norm->setFormat(MTL::VertexFormatFloat3);
+        norm->setBufferIndex(0);
+        norm->setOffset(offsetof(Rendering::PNTVertex, normal));
+
+        auto tex = attributes->object(2);
+        tex->setFormat(MTL::VertexFormatFloat2);
+        tex->setBufferIndex(0);
+        tex->setOffset(offsetof(Rendering::PNTVertex, texture));
+    }
+    //-------------------------------------------------------------------------------------------------------------------
+
+    void setPNTCAttributes(MTL::VertexDescriptor* vd)
+    {
+        auto attributes = vd->attributes();
+
+        auto pos = attributes->object(0);
+        pos->setFormat(MTL::VertexFormatFloat3);
+        pos->setBufferIndex(0);
+        pos->setOffset(offsetof(Rendering::PNTCVertex, position));
+
+        auto norm = attributes->object(1);
+        norm->setFormat(MTL::VertexFormatFloat3);
+        norm->setBufferIndex(0);
+        norm->setOffset(offsetof(Rendering::PNTCVertex, normal));
+
+        auto tex = attributes->object(2);
+        tex->setFormat(MTL::VertexFormatFloat2);
+        tex->setBufferIndex(0);
+        tex->setOffset(offsetof(Rendering::PNTCVertex, texture));
+
+        auto color = attributes->object(3);
+        color->setFormat(MTL::VertexFormatFloat3);
+        color->setBufferIndex(0);
+        color->setOffset(offsetof(Rendering::PNTCVertex, color));
     }
     //-------------------------------------------------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------------------------------------------------
 
-VertexDescriptorFactory::VertexDescriptorPtr VertexDescriptorFactory::create(){
+VertexDescriptorFactory::VertexDescriptorPtr VertexDescriptorFactory::create(Rendering::VertexFormat format)
+{
+    using namespace Rendering;
+    switch (format)
+    {
+        case VertexFormat::PNVertex:
+        {
+            using Vertex = Rendering::PNVertex;
 
-    using Vertex = Rendering::RenderVertex;
+            auto vd = createBaseDescriptor();
+            setPNAttributes(vd);
+            setLayout<Vertex>(vd);
 
-    auto vd = createBaseDescriptor();
-    setVertexAttributes(vd);
-    setLayout<Vertex>(vd);
-    return VertexDescriptorPtr(vd);
+            return VertexDescriptorPtr(vd);
+        }
+
+        case VertexFormat::PNTVertex:
+        {
+            using Vertex = Rendering::PNTVertex;
+
+            auto vd = createBaseDescriptor();
+            setPNTAttributes(vd);
+            setLayout<Vertex>(vd);
+
+            return VertexDescriptorPtr(vd);
+        }
+
+        case VertexFormat::PNTCVertex:
+        {
+            using Vertex = Rendering::PNTCVertex;
+
+            auto vd = createBaseDescriptor();
+            setPNTCAttributes(vd);
+            setLayout<Vertex>(vd);
+
+            return VertexDescriptorPtr(vd);
+        }
+
+        default: return nullptr;
+    }
 }
 //----------------------------------------------------------------------------------------------------------------------
 

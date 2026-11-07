@@ -15,14 +15,7 @@ struct MetalView: NSViewRepresentable
         }
 
         mainControler.setPixelFormat(view.colorPixelFormat)
-
-        view.clearColor = MTLClearColor(
-            red:    0.0,
-            green:  0.0,
-            blue:   0.0,
-            alpha:  1.0
-        )
-
+        
         view.delegate = context.coordinator
         view.isPaused = false
 

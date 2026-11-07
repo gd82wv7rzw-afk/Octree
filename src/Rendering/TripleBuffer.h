@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MetalStuff/MetalArray.hpp"
-#include "Rendering/Vertex.h"
+#include "Rendering/Vertices.h"
 
 #include <cstdint>
 
@@ -12,7 +12,7 @@ class TripleBuffer
 {
     public:
 
-        using Buffer = MetalArray<RenderVertex>;
+        using Buffer = MetalArray<SimulationVertex>;
         using BufferIndex = uint8_t;
 
         struct BufferRoles

@@ -79,6 +79,7 @@ ComputePipelinePtr PipelineBuilder::buildCompute(const char* filepath, const cha
 RenderPipelinePtr PipelineBuilder::buildRender(
     MTL::PixelFormat pixelformat, 
     MTL::PixelFormat depthPixelformat, 
+    Rendering::VertexFormat format, 
     uint32_t sampleCount,
     const char* filepath,
     const char* vertexName,
@@ -86,7 +87,7 @@ RenderPipelinePtr PipelineBuilder::buildRender(
     const char* rootDir)
 {
     NS::Error* error = nullptr;
-    auto vertexDescriptor = VertexDescriptorFactory::create();
+    auto vertexDescriptor = VertexDescriptorFactory::create(format);
 
     // load the compiled library
     auto lib = readLibrary(filepath, mDevice, rootDir);
