@@ -78,16 +78,22 @@ void MetalGravity::generateRandomConfiguration(int nAtoms, float freelength)
 
     mNextAtoms = *(mTree.leafs());
 
+    // allocate outPutBuffer
+    mIputOutputBuf.allocate(mDevice, mNatoms);
+
     //accelaeration
     auto* commandBuffer = mQueue->commandBuffer();
     auto* encoder       = commandBuffer->computeCommandEncoder();
 
     updateCenterOfMass(encoder);
     calculateAcelation(encoder, mTree.leafs()->metalBuffer());
+    copyOutput(encoder);
 
     encoder->endEncoding();
     commandBuffer->commit();
     commandBuffer->waitUntilCompleted();
+
+    mIputOutputBuf.publishInput();
 
     //encoder->release();
     //commandBuffer->release();
@@ -242,6 +248,7 @@ void MetalGravity::buildPipelines()
     mSecondIntegralPipeline = builder.buildCompute("/default.metallib", "secondIntegralAndErrors");
     mIntegratteVelosetiesPipeline = builder.buildCompute("/default.metallib", "integrateVeloseties");
     mFindReinsertAtomsPipeline = builder.buildCompute("/default.metallib", "findReinsertAtoms");
+    mCopyOutpuPipeline = builder.buildCompute("/default.metallib", "copyOutput");
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -390,6 +397,22 @@ void MetalGravity::findReinsertAtoms(MTL::ComputeCommandEncoder* encoder)
     encoder->setBytes(&mBox, sizeof(mBox), 4);
 
     auto width = mFindReinsertAtomsPipeline->threadExecutionWidth();
+    MTL::Size threadsPerThreadgroup(width, 1, 1);
+    MTL::Size grid(mNatoms, 1, 1);
+
+    encoder->dispatchThreads(grid, threadsPerThreadgroup);
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+void MetalGravity::copyOutput(MTL::ComputeCommandEncoder* encoder)
+{
+    encoder->setComputePipelineState(mCopyOutpuPipeline.get());
+
+    encoder->setBuffer(mTree.leafs()->metalBuffer(), 0, 0);
+    encoder->setBuffer(mIputOutputBuf.getInputBuffer()->buffer(), 0, 1);
+    encoder->setBytes(&mBox, sizeof(mBox), 2);
+
+    auto width = mCopyOutpuPipeline->threadExecutionWidth();
     MTL::Size threadsPerThreadgroup(width, 1, 1);
     MTL::Size grid(mNatoms, 1, 1);
 
@@ -592,10 +615,14 @@ void MetalGravity::step()
     // atension, the tmporary buffer for the atoms ist mTree.leafs(), we swap it at the end back to mNextAtoms
     //PROFILE_METAL_CALL("findReinsertAtoms", findReinsertAtoms(encoder);)
     findReinsertAtoms(encoder);
-   
+
+    copyOutput(encoder);
+
     encoder->endEncoding();
     commandBuffer->commit();
     commandBuffer->waitUntilCompleted();
+
+    mIputOutputBuf.publishInput();
 
     //encoder->release();
     //commandBuffer->release();
@@ -610,6 +637,7 @@ void MetalGravity::step()
     //time = std::chrono::duration<double, std::micro>(end - start).count() * 1e-6;
 
     //printf("%-30s Time: %14.7lfs\n", "reinsertAtoms", time);
+
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -667,16 +695,22 @@ bool MetalGravity::readFile(const char* fname)
 
     mNextAtoms = *(mTree.leafs());
 
+    // allocate outPutBuffer
+    mIputOutputBuf.allocate(mDevice, mNatoms);
+
     //accelaeration
     auto* commandBuffer = mQueue->commandBuffer();
     auto* encoder       = commandBuffer->computeCommandEncoder();
 
     updateCenterOfMass(encoder);
     calculateAcelation(encoder, mTree.leafs()->metalBuffer());
+    copyOutput(encoder);
 
     encoder->endEncoding();
     commandBuffer->commit();
     commandBuffer->waitUntilCompleted();
+
+    mIputOutputBuf.publishInput();
     
     return true;
 }
@@ -738,6 +772,5 @@ void MetalGravity::run(Gui::GuiParameter* parameters)
 
         ++mStep;
     }  
-    
 }
 //----------------------------------------------------------------------------------------------------------------------

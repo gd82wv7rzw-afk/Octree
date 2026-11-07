@@ -1,6 +1,8 @@
 #import "MainControler.h"
+
 #include "Simulation/MetalGravity.h"
 #include "Gui/GuiParameter.h"
+#include "Rendering/Renderer.h"
 
 #include <Metal/Metal.hpp>
 #include <algorithm>
@@ -13,6 +15,7 @@
 
 #import <AppKit/AppKit.h>
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+//#import <MetalKit/MetalKit.h>
 
 MainControlerNotification const MainControlerParametersDidChangeNotification = @"MainControlerParametersDidChangeNotification";
 
@@ -119,6 +122,8 @@ static void readLogPipe(
     id<MTLCommandQueue> _metalCommandQueue;
     MTL::CommandQueue* _commandQueue;
 
+    std::unique_ptr<Rendering::Renderer> _renderer;
+
     std::atomic_bool _isRunning;
     std::thread _worker;
     Gui::GuiParameter _parameters;
@@ -211,6 +216,9 @@ static void readLogPipe(
 
     // simulation
     _metalSimulation = std::make_unique<Simulation::MetalGravity>(_cppDevice, _commandQueue);
+
+    // renderer
+    _renderer = std::make_unique<Rendering::Renderer>(_cppDevice, _commandQueue);
 
     return self;
 }
@@ -869,6 +877,42 @@ static void readLogPipe(
     _parameters.fileNames.startConfig = std::string(panel.URL.path.UTF8String);
 
     return YES;
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+- (void)setPixelFormat:(MTLPixelFormat)pixelFormat
+{
+    _renderer->setPixelFormat(static_cast<MTL::PixelFormat>(pixelFormat));
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+- (void)drawInView:(MTKView*)view
+{
+    if (!_renderer) return;
+
+    id<CAMetalDrawable> drawable = view.currentDrawable;
+    MTLRenderPassDescriptor* renderPass = view.currentRenderPassDescriptor;
+
+    if (!drawable || !renderPass) return;
+
+    _renderer->updateFrame
+    (
+        (__bridge CA::MetalDrawable*)drawable,
+        (__bridge MTL::RenderPassDescriptor*)renderPass,
+        _metalSimulation->getOutput()
+    );
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+- (void)drawableSizeWillChange:(CGSize)size
+{
+    if (!_renderer) return;
+
+    _renderer->resize
+    (
+        static_cast<float>(size.width),
+        static_cast<float>(size.height)
+    );
 }
 //----------------------------------------------------------------------------------------------------------------------
 

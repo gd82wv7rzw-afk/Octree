@@ -2,6 +2,7 @@
 
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
+#import <MetalKit/MetalKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -33,6 +34,10 @@ FOUNDATION_EXPORT MainControlerNotification const MainControlerParametersDidChan
 
 - (void) setRecordTrajectory:(BOOL)record;
 - (void) setInitialConfiguration:(BOOL)random;
+
+- (void)setPixelFormat:(MTLPixelFormat)pixelFormat;
+- (void)drawInView:(MTKView*)view;
+- (void)drawableSizeWillChange:(CGSize)size;
 
 @end
 

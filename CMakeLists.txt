@@ -66,6 +66,9 @@ set(APP_SOURCES
     "${SOURCE_DIR}/Gui/MetalView/MetalView.swift"
     "${SOURCE_DIR}/Gui/SettingsView/SettingsView.swift"
     "${SOURCE_DIR}/Gui/MainControler.mm"
+    "${SOURCE_DIR}/Rendering/Renderer.cpp"
+    "${SOURCE_DIR}/MetalStuff/Pipeline/VertexDescriptorFactory.cpp"
+    "${SOURCE_DIR}/Rendering/TripleBuffer.cpp"
 )
 
 add_executable(${APP_NAME} MACOSX_BUNDLE ${APP_SOURCES})
@@ -135,6 +138,8 @@ set(SHADERS
     "src/Simulation/Shader/updateCenterOfMass.metal"
     "src/Simulation/Shader/reduseMaxError.metal"
     "src/Simulation/Shader/findReinsertAtoms.metal"
+    "src/Simulation/Shader/copyOutput.metal"
+    "src/Rendering/Shader/render.metal"
 )
 
 file(GLOB_RECURSE METAL_HEADERS CONFIGURE_DEPENDS

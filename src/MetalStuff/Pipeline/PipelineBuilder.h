@@ -34,6 +34,16 @@ class PipelineBuilder {
             const char* rootDir = NULL);
         //--------------------------------------------------------------------------------------------------------------
 
+        MetalStuff::Pipeline::RenderPipelinePtr buildRender(
+            MTL::PixelFormat pixelformat,
+            MTL::PixelFormat depthPixelformat,
+            uint32_t sampleCount,
+            const char* filepath,
+            const char* vertexName,
+            const char* fragmentName, 
+            const char* rootDir = NULL);
+        //--------------------------------------------------------------------------------------------------------------
+
     private:
 
         /// @brief Metal device (non-owning reference)

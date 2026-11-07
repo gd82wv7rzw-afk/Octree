@@ -14,11 +14,13 @@ struct MetalView: NSViewRepresentable
             view.device = device
         }
 
+        mainControler.setPixelFormat(view.colorPixelFormat)
+
         view.clearColor = MTLClearColor(
-            red: 0.0,
-            green: 0.0,
-            blue: 0.0,
-            alpha: 1.0
+            red:    0.0,
+            green:  0.0,
+            blue:   0.0,
+            alpha:  1.0
         )
 
         view.delegate = context.coordinator
@@ -35,9 +37,7 @@ struct MetalView: NSViewRepresentable
 
     func makeCoordinator() -> Coordinator
     {
-        let coordinator = Coordinator()
-        coordinator.commandQueue = mainControler.commandQueue
-        return coordinator
+        Coordinator(mainControler: mainControler)
     }
     //------------------------------------------------------------------------------------------------------------------
 }
@@ -45,23 +45,24 @@ struct MetalView: NSViewRepresentable
 
 class Coordinator: NSObject, MTKViewDelegate
 {
-    var commandQueue: MTLCommandQueue?
+    let mainControler: MainControler
+
+    init(mainControler: MainControler)
+    {
+        self.mainControler = mainControler
+    }
 
     func draw(in view: MTKView)
     {
-        guard let drawable = view.currentDrawable,
-              let descriptor = view.currentRenderPassDescriptor,
-              let commandBuffer = commandQueue?.makeCommandBuffer(),
-              let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor)
-        else { return }
-
-        encoder.endEncoding()
-        commandBuffer.present(drawable)
-        commandBuffer.commit()
+        mainControler.draw(in: view)
     }
 
-    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize)
+    func mtkView(
+        _ view: MTKView,
+        drawableSizeWillChange size: CGSize
+    )
     {
+        mainControler.drawableSizeWillChange(size)
     }
 }
 //----------------------------------------------------------------------------------------------------------------------

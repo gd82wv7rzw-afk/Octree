@@ -5,11 +5,15 @@
 #include "Octree/Octree.h"
 #include "MetalStuff/MetalArray.hpp"
 #include "MetalStuff/Pipeline/PipelineBuilder.h"
+#include "Rendering/TripleBuffer.h"
 
 #include <random>
 #include <Metal/Metal.hpp>
 
-namespace Gui {struct GuiParameter;}
+namespace Gui 
+{
+    struct GuiParameter;
+}
 
 namespace Simulation {
 
@@ -22,9 +26,7 @@ class MetalGravity
         using PipelinePtr = MetalStuff::Pipeline::ComputePipelinePtr;
         using TreeBranch = Octree::Implementation::MetalTree<Simulation::Atom, Simulation::Branch>::branch_type;
         using TreeLeaf   = Octree::Implementation::MetalTree<Simulation::Atom, Simulation::Branch>::leaf_type;
-        
-        template< class T>
-        using MetalBuffer = Octree::Implementation::MetalBuffer<T>;
+        //-------------------------------------------------------------------------------------------------------------- 
 
     public:
 
@@ -50,6 +52,9 @@ class MetalGravity
         //--------------------------------------------------------------------------------------------------------------
 
         bool printSnapshot(const std::string& path, int step);
+
+        // TODO switsh the buffer
+        auto* getOutput() {return mIputOutputBuf.getOutputBuffer(); /*mIputOutputBuf.releaseOutput();*/}
         //--------------------------------------------------------------------------------------------------------------
 
         auto* tree()       noexcept {return &mTree;}
@@ -70,10 +75,12 @@ class MetalGravity
         void updateCenterOfMass(MTL::ComputeCommandEncoder* encoder);
         void reduceMaxError(MTL::ComputeCommandEncoder* encoder);
         void findReinsertAtoms(MTL::ComputeCommandEncoder* encoder);
+        void copyOutput(MTL::ComputeCommandEncoder* encoder);
         void reinsertAtoms();
         //--------------------------------------------------------------------------------------------------------------
 
         std::atomic_bool mIsRunning{false};
+        Rendering::TripleBuffer mIputOutputBuf;
         //--------------------------------------------------------------------------------------------------------------
 
         /// @brief the number of atoms
@@ -110,6 +117,7 @@ class MetalGravity
         PipelinePtr mReduceMaxErrorPipeline{nullptr};
         PipelinePtr mIntegratteVelosetiesPipeline{nullptr};
         PipelinePtr mFindReinsertAtomsPipeline{nullptr};
+        PipelinePtr mCopyOutpuPipeline{nullptr};
         //--------------------------------------------------------------------------------------------------------------
 };
 //----------------------------------------------------------------------------------------------------------------------
