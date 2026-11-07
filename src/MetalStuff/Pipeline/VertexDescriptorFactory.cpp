@@ -18,7 +18,28 @@ namespace
     {
         vd->layouts()->object(0)->setStride(sizeof(Vertex));
         vd->layouts()->object(0)->setStepRate(1);
-        vd->layouts()->object(0)->setStepFunction(MTL::VertexStepFunctionPerInstance);
+        vd->layouts()->object(0)->setStepFunction(MTL::VertexStepFunctionPerVertex);
+    }
+    //-------------------------------------------------------------------------------------------------------------------
+
+    void setSimulationAttributes(MTL::VertexDescriptor* vd)
+    {
+        auto attributes = vd->attributes();
+
+        auto pos = attributes->object(0);
+        pos->setFormat(MTL::VertexFormatFloat3);
+        pos->setBufferIndex(0);
+        pos->setOffset(offsetof(Rendering::SimulationVertex, pos));
+
+        auto vel = attributes->object(1);
+        vel->setFormat(MTL::VertexFormatFloat3);
+        vel->setBufferIndex(0);
+        vel->setOffset(offsetof(Rendering::SimulationVertex, vel));
+
+        auto acc = attributes->object(2);
+        acc->setFormat(MTL::VertexFormatFloat3);
+        acc->setBufferIndex(0);
+        acc->setOffset(offsetof(Rendering::SimulationVertex, acc));
     }
     //-------------------------------------------------------------------------------------------------------------------
 
@@ -29,12 +50,12 @@ namespace
         auto pos = attributes->object(0);
         pos->setFormat(MTL::VertexFormatFloat3);
         pos->setBufferIndex(0);
-        pos->setOffset(offsetof(Rendering::PNVertex, position));
+        pos->setOffset(offsetof(Rendering::PNVertex, pos));
 
         auto norm = attributes->object(1);
         norm->setFormat(MTL::VertexFormatFloat3);
         norm->setBufferIndex(0);
-        norm->setOffset(offsetof(Rendering::PNVertex, normal));
+        norm->setOffset(offsetof(Rendering::PNVertex, normale));
     }
     //-------------------------------------------------------------------------------------------------------------------
 
@@ -120,6 +141,17 @@ VertexDescriptorFactory::VertexDescriptorPtr VertexDescriptorFactory::create(Ren
 
             auto vd = createBaseDescriptor();
             setPNTCAttributes(vd);
+            setLayout<Vertex>(vd);
+
+            return VertexDescriptorPtr(vd);
+        }
+
+        case VertexFormat::SimulationVertex:
+        {
+            using Vertex = Rendering::SimulationVertex;
+
+            auto vd = createBaseDescriptor();
+            setSimulationAttributes(vd);
             setLayout<Vertex>(vd);
 
             return VertexDescriptorPtr(vd);

@@ -1,5 +1,6 @@
 #include "Renderer.h"
 #include "MetalStuff/Pipeline/VertexDescriptorFactory.h"
+#include "Rendering/CameraUniforms.h"
 
 #include <stdexcept>
 #include <Foundation/Foundation.hpp>
@@ -15,25 +16,39 @@ Renderer::Renderer(MTL::Device* device, MTL::CommandQueue* commandQueue)
     buildPipeline();
     buildDepthStencilState();
     createDepthAndMSAATextures();
+
+    mTestMesh = MeshFactory::CreateIcoSphereMesh(mMetalDevice, 2, VertexFormat::PNVertex, true);
+
+    mCameraBuffer = mMetalDevice->newBuffer(sizeof(CameraUniforms), MTL::ResourceStorageModeShared);
+    updateCamera();
 }
 //----------------------------------------------------------------------------------------------------------------------
 
 Renderer::~Renderer()
 {
     // GPU resources (Metal retain/release ownership)
-    if (mMsaaRenderTargetTexture) {
+    if (mMsaaRenderTargetTexture) 
+    {
         mMsaaRenderTargetTexture->release();
         mMsaaRenderTargetTexture = nullptr;
     }
 
-    if (mDepthTexture) {
+    if (mDepthTexture) 
+    {
         mDepthTexture->release();
         mDepthTexture = nullptr;
     }
 
-    if (mDepthStencilState) {
+    if (mDepthStencilState) 
+    {
         mDepthStencilState->release();
         mDepthStencilState = nullptr;
+    }
+
+    if (mCameraBuffer)
+    {
+        mCameraBuffer->release();
+        mCameraBuffer = nullptr;
     }
 }
 //----------------------------------------------------------------------------------------------------------------------
@@ -106,6 +121,8 @@ void Renderer::resize(float width, float height)
 
     // Recreate GPU resources with new dimensions
     createDepthAndMSAATextures();
+
+    updateCamera();
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -150,15 +167,27 @@ void Renderer::updateFrame(CA::MetalDrawable* drawable, MTL::RenderPassDescripto
     encoder->setFrontFacingWinding(MTL::WindingCounterClockwise);
     encoder->setCullMode(MTL::CullModeBack);
 
-    encoder->setVertexBuffer(buf->buffer(), 0, 0);
+    //encoder->setVertexBuffer(buf->buffer(), 0, 0);
+    encoder->setVertexBuffer(mTestMesh->vertexBuffer, 0, 0);
+    encoder->setVertexBuffer(mCameraBuffer, 0, 1);
 
+    encoder->setTriangleFillMode(MTL::TriangleFillModeLines);
+
+    encoder->drawIndexedPrimitives(
+        MTL::PrimitiveTypeTriangle,
+        mTestMesh->indexCount,
+        MTL::IndexTypeUInt32,
+        mTestMesh->indexBuffer,
+        0
+    );
+/*
     encoder->drawPrimitives(
         MTL::PrimitiveTypeTriangle,
         NS::UInteger(0),
         NS::UInteger(3),
         NS::UInteger(buf->size())
     );
-
+*/
     encoder->endEncoding();
 
     commandBuffer->presentDrawable(drawable);
@@ -183,5 +212,21 @@ void Renderer::buildPipeline()
         "/default.metallib", 
         "vertexMain", 
         "fragmentMain");
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+void Renderer::updateCamera()
+{
+    mCamera.setPerspective(
+        0.785398f,
+        mWidth / mHeight,
+        0.1f,
+        1000.0f
+    );
+
+    auto* uniforms = static_cast<CameraUniforms*>(mCameraBuffer->contents());
+
+    uniforms->view       = mCamera.viewMatrix();
+    uniforms->projection = mCamera.projectionMatrix();
 }
 //----------------------------------------------------------------------------------------------------------------------

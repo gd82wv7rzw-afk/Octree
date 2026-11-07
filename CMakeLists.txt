@@ -70,6 +70,7 @@ set(APP_SOURCES
     "${SOURCE_DIR}/Rendering/Meshes/Mesh.cpp"
     "${SOURCE_DIR}/Rendering/Meshes/Icosphere.cpp"
     "${SOURCE_DIR}/Rendering/mtlm.cpp"
+    "${SOURCE_DIR}/Rendering/Camera.cpp"
     "${SOURCE_DIR}/MetalStuff/Pipeline/VertexDescriptorFactory.cpp"
     "${SOURCE_DIR}/Rendering/TripleBuffer.cpp"
 )
