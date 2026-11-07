@@ -1,37 +1,26 @@
 
 #include <metal_stdlib>
+#include "Rendering/CameraUniforms.h"
+#include "Rendering/Vertices.h"
+
 using namespace metal;
+using namespace Rendering;
 
-struct VertexIn 
-{
-    float3 pos [[attribute(0)]];
-    float3 vel [[attribute(1)]];
-    float3 acc [[attribute(2)]];
-};
-
-struct VertexOut 
+struct VertexOut
 {
     float4 position [[position]];
 };
-
-//constant float PI = 3.14159265359;
+//----------------------------------------------------------------------------------------------------------------------
 
 vertex VertexOut vertexMain(
-    uint vertexID [[vertex_id]],
-    uint instanceID [[instance_id]],
-    VertexIn in [[stage_in]])
+    PNVertex in [[stage_in]],
+    constant CameraUniforms& camera [[buffer(1)]])
 {
     VertexOut out;
 
-    constexpr float2 offsets[3] = {
-        float2(-0.001, -0.001),
-        float2( 0.001, -0.001),
-        float2( 0.001,  0.001)
-    };
-
-    float2 pos = in.pos.xy + offsets[vertexID];
-
-    out.position = float4(pos, in.pos.z, 1.0);
+    float4 worldPosition = float4(in.pos, 1.0);
+    //out.position = worldPosition;
+    out.position = camera.projection * camera.view * worldPosition;
 
     return out;
 }
@@ -39,6 +28,6 @@ vertex VertexOut vertexMain(
 
 fragment float4 fragmentMain(VertexOut in [[stage_in]])
 {
-    return float4(1,1,0,1);
+    return float4(1,0,0,1);
 }
 //----------------------------------------------------------------------------------------------------------------------

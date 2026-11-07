@@ -29,9 +29,9 @@ enum class VertexFormat : uint8_t
 struct SimulationVertex 
 {
 #ifdef __METAL_VERSION__
-    float3 pos{0.f, 0.f, 0.f};
-    float3 vel{0.f, 0.f, 0.f};
-    float3 acc{0.f, 0.f, 0.f};
+    float3 pos [[attribute(0)]];
+    float3 vel [[attribute(1)]];
+    float3 acc [[attribute(2)]];
 #else
     simd::float3 pos{0.f, 0.f, 0.f};
     simd::float3 vel{0.f, 0.f, 0.f};
@@ -42,10 +42,15 @@ struct SimulationVertex
 
 struct PNVertex
 {
-    simd::float3 position;
-    simd::float3 normal;
+#ifdef __METAL_VERSION__
+    float3 pos     [[attribute(0)]];
+    float3 normale [[attribute(1)]];
+#else
+    simd::float3 pos{0.f, 0.f, 0.f};
+    simd::float3 normale{0.f, 0.f, 0.f};
+#endif
 };
-// -----------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 struct PNTVertex
 {
@@ -53,7 +58,7 @@ struct PNTVertex
     simd::float3 normal;
     simd::float2 texture;
 };
-// -----------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 struct PNTCVertex
 {
@@ -62,5 +67,5 @@ struct PNTCVertex
     simd::float2 texture;
     simd::float3 color;
 };
-    // -----------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 } // namespace Renderering ---------------------------------------------------------------------------------------------

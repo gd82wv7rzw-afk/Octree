@@ -393,8 +393,8 @@ std::unique_ptr<Mesh> finalizePN(
     for (size_t i = 0; i < rawMesh.vertices.size(); ++i)
     {
         Vertex v;
-        v.position = rawMesh.vertices[i];
-        v.normal   = normals[i];
+        v.pos      = rawMesh.vertices[i];
+        v.normale  = normals[i];
 
         vertices.push_back(v);
     }

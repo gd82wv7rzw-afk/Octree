@@ -3,6 +3,8 @@
 #include "MetalStuff/Pipeline/PipelineBuilder.h"
 #include "MetalStuff/MetalArray.hpp"
 #include "Rendering/Vertices.h"
+#include "Rendering/Camera.h"
+#include "Rendering/Meshes/Mesh.h"
 
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
@@ -31,6 +33,7 @@ class Renderer
         void buildPipeline();
         void buildDepthStencilState();
         void createDepthAndMSAATextures();
+        void updateCamera();
         //--------------------------------------------------------------------------------------------------------------
 
         // metal core
@@ -52,13 +55,18 @@ class Renderer
         MTL::Texture* mMsaaRenderTargetTexture = nullptr;
         MTL::Texture* mDepthTexture = nullptr;
         //--------------------------------------------------------------------------------------------------------------
+
+        uint32_t mSampleCount = 4;
+        //--------------------------------------------------------------------------------------------------------------
  
         // Weitere Ressourcen wie bisher
         float mWidth = 1.0f;
-        float mHeight = 1.0f;   
- 
-        uint32_t mSampleCount = 4;
-        //--------------------------------------------------------------------------------------------------------------
+        float mHeight = 1.0f;  
+        Rendering::Camera mCamera;
+        MTL::Buffer* mCameraBuffer{nullptr};
+
+        std::unique_ptr<Mesh> mTestMesh;
+        //--------------------------------------------------------------------------------------------------------------     
 };
 //----------------------------------------------------------------------------------------------------------------------
 

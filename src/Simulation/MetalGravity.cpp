@@ -54,7 +54,11 @@ void MetalGravity::generateRandomConfiguration(int nAtoms, float freelength)
 
             float3 p{x, y, z};
 
-            if (dot(p,p) < mBox.x * mBox.x / 4) 
+            float min2 = std::min(std::min(mBox.x, mBox.y), mBox.z );
+            min2 /= 2;
+            min2 *= min2;
+
+            if (dot(p,p) < min2) 
             {
                 point = p;
                 break;
