@@ -901,6 +901,8 @@ static void readLogPipe(
         (__bridge MTL::RenderPassDescriptor*)renderPass,
         _metalSimulation->getOutput()
     );
+
+    _metalSimulation->renderingIsDone();
 }
 //----------------------------------------------------------------------------------------------------------------------
 

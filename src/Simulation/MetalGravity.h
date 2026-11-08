@@ -52,9 +52,13 @@ class MetalGravity
         //--------------------------------------------------------------------------------------------------------------
 
         bool printSnapshot(const std::string& path, int step);
+        //--------------------------------------------------------------------------------------------------------------
 
-        // TODO switsh the buffer
-        auto* getOutput() {return mIputOutputBuf.getOutputBuffer(); /*mIputOutputBuf.releaseOutput();*/}
+        auto* getOutput() {return mIputOutputBuf.getOutputBuffer(); }
+        //--------------------------------------------------------------------------------------------------------------
+
+        // call it after the rendering
+        void renderingIsDone() { mIputOutputBuf.releaseOutput();}
         //--------------------------------------------------------------------------------------------------------------
 
         auto* tree()       noexcept {return &mTree;}

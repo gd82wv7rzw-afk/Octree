@@ -49,7 +49,7 @@ vertex VertexOut vertexMain
     }
     else
     {
-        color = mix(float3{0.5f, 0.5f, 0.5f}, float3{1.0f, 0.0f, 0.0f}, t * 2);
+        color = mix(float3{0.5f, 0.5f, 0.5f}, float3{1.0f, 0.0f, 0.0f}, (t - 0.5f) * 2);
     }
 
     out.color = color;
