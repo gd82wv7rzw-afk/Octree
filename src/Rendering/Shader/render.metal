@@ -21,7 +21,7 @@ vertex VertexOut vertexMain
 )
 {
     VertexOut out;
-    const float scale = 1e-2;
+    const float scale = 1e-3;
 
     float3 atomPos  = atoms[instanceID].pos;
     float3 worldPos = in.pos * scale + atomPos;

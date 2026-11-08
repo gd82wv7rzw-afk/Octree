@@ -17,9 +17,9 @@ kernel void copyOutput(
     SimulationVertex& out = output[id];
 
     // bring the possitions in the range -1 .. +1
-    out.pos.x = atom.pos.x * 1.5 / box.x;
-    out.pos.y = atom.pos.y * 1.5 / box.y;
-    out.pos.z = atom.pos.z * 1.5 / box.z;
+    out.pos.x = atom.pos.x * 2.0 / box.x;
+    out.pos.y = atom.pos.y * 2.0 / box.y;
+    out.pos.z = atom.pos.z * 2.0 / box.z;
 
     out.vel = atom.vel;
     out.acc = atom.acc;
