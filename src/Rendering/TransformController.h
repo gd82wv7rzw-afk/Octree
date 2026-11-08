@@ -26,6 +26,7 @@ class TransformController
 
         const simd::float4x4& viewMatrix() const;
         const simd::float4x4& projectionMatrix() const;
+        const simd::float4x4& rotMatrix() const;
         const simd::float4x4& pvmMatrix() const;
         //--------------------------------------------------------------------------------------------------------------
 

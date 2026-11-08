@@ -16,7 +16,7 @@ Renderer::Renderer(MTL::Device* device, MTL::CommandQueue* commandQueue)
     buildDepthStencilState();
     createDepthAndMSAATextures();
 
-    mTestMesh = MeshFactory::CreateIcoSphereMesh(mMetalDevice, 3, VertexFormat::PNVertex, true);
+    mTestMesh = MeshFactory::CreateIcoSphereMesh(mMetalDevice, 2, VertexFormat::PNVertex, true);
     //Create24FacesCube(mMetalDevice, VertexFormat::PNVertex);
 
     updateCamera();
@@ -179,12 +179,12 @@ void Renderer::updateFrame(CA::MetalDrawable* drawable, MTL::RenderPassDescripto
     encoder->setFrontFacingWinding(MTL::WindingCounterClockwise);
     encoder->setCullMode(MTL::CullModeBack);
 
-    //encoder->setVertexBuffer(buf->buffer(), 0, 0);
     encoder->setVertexBuffer(mTestMesh->vertexBuffer, 0, 0);
     encoder->setVertexBuffer(buf->buffer(), 0, 1);
     encoder->setVertexBytes(&mTransformController.pvmMatrix(), sizeof(simd::float4x4), 2);
+    encoder->setVertexBytes(&mTransformController.rotMatrix(), sizeof(simd::float4x4), 3);
 
-    encoder->setTriangleFillMode(MTL::TriangleFillModeLines);
+    //encoder->setTriangleFillMode(MTL::TriangleFillModeLines);
 
     encoder->drawIndexedPrimitives
     (
@@ -195,22 +195,7 @@ void Renderer::updateFrame(CA::MetalDrawable* drawable, MTL::RenderPassDescripto
         0,
         buf->size()
     );
-/*
-    encoder->drawIndexedPrimitives(
-        MTL::PrimitiveTypeTriangle,
-        mTestMesh->indexCount,
-        MTL::IndexTypeUInt32,
-        mTestMesh->indexBuffer,
-        0
-    );
 
-    encoder->drawPrimitives(
-        MTL::PrimitiveTypeTriangle,
-        NS::UInteger(0),
-        NS::UInteger(3),
-        NS::UInteger(buf->size())
-    );
-*/
     encoder->endEncoding();
 
     commandBuffer->presentDrawable(drawable);

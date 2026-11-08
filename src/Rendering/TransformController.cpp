@@ -86,6 +86,12 @@ const simd::float4x4& TransformController::pvmMatrix() const
 }
 //----------------------------------------------------------------------------------------------------------------------
 
+const simd::float4x4& TransformController::rotMatrix() const
+{
+    return mRotate;
+}
+//----------------------------------------------------------------------------------------------------------------------
+
 void TransformController::rotX(float dPhi)
 {
     mRotate = mtlm::rotation(simd::float3{1, 0, 0}, dPhi) * mRotate;
