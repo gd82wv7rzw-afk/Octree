@@ -75,7 +75,7 @@ class MetalGravity
         void calculateAcelation(MTL::ComputeCommandEncoder* encoder, MTL::Buffer* atoms);
         void firstIntegral(MTL::ComputeCommandEncoder* encoder);
         void secondIntegralAndError(MTL::ComputeCommandEncoder* encoder);
-        void integrateVelosseties(MTL::ComputeCommandEncoder* encode);
+        void integrateVelosseties(MTL::ComputeCommandEncoder* encode, float temperature);
         void updateCenterOfMass(MTL::ComputeCommandEncoder* encoder);
         void reduceMaxError(MTL::ComputeCommandEncoder* encoder);
         void findReinsertAtoms(MTL::ComputeCommandEncoder* encoder);
@@ -85,6 +85,7 @@ class MetalGravity
 
         std::atomic_bool mIsRunning{false};
         Rendering::TripleBuffer mIputOutputBuf;
+        Gui::GuiParameter* mParameters{nullptr};
         //--------------------------------------------------------------------------------------------------------------
 
         /// @brief the number of atoms

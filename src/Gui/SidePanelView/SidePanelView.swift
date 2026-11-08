@@ -129,9 +129,13 @@ struct SidePanelView: View
                         .monospacedDigit()
                         .frame(maxWidth: .infinity, alignment: .trailing)
 
-                    Slider(value: $delta_t, in: 1e-2...1e1)
+                    Slider(value: $delta_t, in: 1e-2...1)
                         .frame(maxWidth: .infinity)
                 }
+            }
+            .onChange(of: delta_t)
+            {
+                mainControler.setDt(delta_t)
             }
             //----------------------------------------------------------------------------------------------------------
 
@@ -164,9 +168,13 @@ struct SidePanelView: View
                         .monospacedDigit()
                         .frame(maxWidth: .infinity, alignment: .trailing)
 
-                    Slider(value: $temperature, in: 0...2)
+                    Slider(value: $temperature, in: 0.9...1.1)
                         .frame(maxWidth: .infinity)
                 }
+            }
+            .onChange(of: temperature)
+            {
+                mainControler.setTemperature(temperature)
             }
             //----------------------------------------------------------------------------------------------------------
 

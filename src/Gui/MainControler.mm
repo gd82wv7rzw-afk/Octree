@@ -924,4 +924,24 @@ static void readLogPipe(
 }
 //----------------------------------------------------------------------------------------------------------------------
 
+- (void)setTemperature:(double)value
+{
+    _parameters.simulationSettings.temperature.store
+    (
+        static_cast<float>(value),
+        std::memory_order_relaxed
+    );
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+- (void)setDt:(double)value
+{
+    _parameters.simulationSettings.dt.store
+    (
+        static_cast<float>(value),
+        std::memory_order_relaxed
+    );
+}
+//----------------------------------------------------------------------------------------------------------------------
+
 @end

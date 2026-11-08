@@ -43,9 +43,10 @@ kernel void secondIntegralAndErrors(
 //----------------------------------------------------------------------------------------------------------------------
 
 kernel void integrateVeloseties(
-    device   const LeafNode* atomsA [[buffer(0)]],
-    device         LeafNode* atomsB [[buffer(1)]],
-    constant       float& dt        [[buffer(2)]],
+    device   const LeafNode* atomsA   [[buffer(0)]],
+    device         LeafNode* atomsB   [[buffer(1)]],
+    constant       float& dt          [[buffer(2)]],
+    constant       float& temperature [[buffer(3)]],
     uint id    [[thread_position_in_grid]]
 ) 
 {
@@ -53,6 +54,6 @@ kernel void integrateVeloseties(
     const float3 aA = atomsA[id].value.acc;  
     const float3 aB = atomsB[id].value.acc;
 
-    atomsB[id].value.vel = v + (aA + aB) * 0.5f * dt;
+    atomsB[id].value.vel = (v + (aA + aB) * 0.5f * dt) * temperature;
 }
 //----------------------------------------------------------------------------------------------------------------------

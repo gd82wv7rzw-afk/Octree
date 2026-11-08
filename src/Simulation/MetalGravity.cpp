@@ -317,13 +317,14 @@ void MetalGravity::secondIntegralAndError(MTL::ComputeCommandEncoder* encoder)
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-void MetalGravity::integrateVelosseties(MTL::ComputeCommandEncoder* encoder)
+void MetalGravity::integrateVelosseties(MTL::ComputeCommandEncoder* encoder, float temperature)
 {
     encoder->setComputePipelineState(mIntegratteVelosetiesPipeline.get());
 
     encoder->setBuffer(mTree.leafs()->metalBuffer(), 0, 0);
     encoder->setBuffer(mNextAtoms.metalBuffer(), 0, 1);
     encoder->setBytes(&mDt, sizeof(mDt), 2);
+    encoder->setBytes(&temperature, sizeof(float), 3);
 
     // gpu layout
     const auto width = mIntegratteVelosetiesPipeline->threadExecutionWidth();
@@ -534,8 +535,10 @@ void MetalGravity::reinsertAtoms()
 
 void MetalGravity::step()
 {
+    const float temperature = mParameters->simulationSettings.temperature.load(std::memory_order_relaxed);
     auto* commandBuffer = mQueue->commandBuffer();
     auto* encoder       = commandBuffer->computeCommandEncoder();
+    mDt                 = mParameters->simulationSettings.dt.load(std::memory_order_relaxed);
 
     const int maxStepps = 100;
     float oldError      = 1e5f;
@@ -611,9 +614,11 @@ void MetalGravity::step()
 //      mIterationSteps = 0;
 //      mCounter = 0;
 //  }
+
+    mParameters->simulationSettings.dt.store(mDt, std::memory_order_relaxed);
    
     //PROFILE_METAL_CALL("integrateVelosseties", integrateVelosseties(encoder);)
-    integrateVelosseties(encoder);
+    integrateVelosseties(encoder, temperature);
     //encoder->memoryBarrier(MTL::BarrierScopeBuffers);
 
     // atension, the tmporary buffer for the atoms ist mTree.leafs(), we swap it at the end back to mNextAtoms
@@ -759,6 +764,7 @@ void MetalGravity::run(Gui::GuiParameter* parameters)
     bool record  = parameters->recordTrajectory;
     int  recFreq = parameters->trajectoryFrequency;
     auto dir     = parameters->fileNames.trajectoryFolder;
+    mParameters  = parameters;
 
     while (mIsRunning)
     {

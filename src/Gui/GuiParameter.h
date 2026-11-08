@@ -17,6 +17,8 @@ struct SimulationSettings
     int nAtoms{int(1e5)};
     float meanFreeDistance{1e2};
     bool randomConfiguration{true};
+    std::atomic<float> temperature{1.f};
+    std::atomic<float> dt{0.1f};
 };
 //----------------------------------------------------------------------------------------------------------------------
 

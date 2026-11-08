@@ -24,8 +24,8 @@ vertex VertexOut vertexMain
 )
 {
     VertexOut out;
-    const float scale = 5e-3;
-    const float maxVSquare = 5.f;
+    const float scale = 2.5e-3;
+    const float maxVSquare = 2.5f;
 
     float3 atomPos  = atoms[instanceID].pos;
     float  vSquare  = dot(atoms[instanceID].vel, atoms[instanceID].vel);

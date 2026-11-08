@@ -41,6 +41,9 @@ FOUNDATION_EXPORT MainControlerNotification const MainControlerParametersDidChan
 
 - (void)mouseDragged:(float)dx :(float)dy :(BOOL)controlPressed;
 
+- (void)setTemperature:(double)value;
+- (void)setDt:(double)value;
+
 @end
 
 NS_ASSUME_NONNULL_END
