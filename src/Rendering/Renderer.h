@@ -3,7 +3,7 @@
 #include "MetalStuff/Pipeline/PipelineBuilder.h"
 #include "MetalStuff/MetalArray.hpp"
 #include "Rendering/Vertices.h"
-#include "Rendering/Camera.h"
+#include "Rendering/TransformController.h"
 #include "Rendering/Meshes/Mesh.h"
 
 #include <Metal/Metal.hpp>
@@ -27,6 +27,8 @@ class Renderer
         void resize(float width, float height);
 
         void updateFrame(CA::MetalDrawable* drawable, MTL::RenderPassDescriptor* renderPass, Buffer* buf);
+
+        void mouseDragged(float dx, float dy, bool controlPressed);
 
     private:
 
@@ -62,8 +64,8 @@ class Renderer
         // Weitere Ressourcen wie bisher
         float mWidth = 1.0f;
         float mHeight = 1.0f;  
-        Rendering::Camera mCamera;
-        MTL::Buffer* mCameraBuffer{nullptr};
+        Rendering::TransformController mTransformController;
+        //MTL::Buffer* mCameraBuffer{nullptr};
 
         std::unique_ptr<Mesh> mTestMesh;
         //--------------------------------------------------------------------------------------------------------------     

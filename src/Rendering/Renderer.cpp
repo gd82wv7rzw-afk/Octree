@@ -1,6 +1,5 @@
 #include "Renderer.h"
 #include "MetalStuff/Pipeline/VertexDescriptorFactory.h"
-#include "Rendering/CameraUniforms.h"
 
 #include <stdexcept>
 #include <Foundation/Foundation.hpp>
@@ -17,9 +16,9 @@ Renderer::Renderer(MTL::Device* device, MTL::CommandQueue* commandQueue)
     buildDepthStencilState();
     createDepthAndMSAATextures();
 
-    mTestMesh = MeshFactory::CreateIcoSphereMesh(mMetalDevice, 2, VertexFormat::PNVertex, true);
+    mTestMesh = MeshFactory::CreateIcoSphereMesh(mMetalDevice, 3, VertexFormat::PNVertex, true);
+    //Create24FacesCube(mMetalDevice, VertexFormat::PNVertex);
 
-    mCameraBuffer = mMetalDevice->newBuffer(sizeof(CameraUniforms), MTL::ResourceStorageModeShared);
     updateCamera();
 }
 //----------------------------------------------------------------------------------------------------------------------
@@ -44,12 +43,25 @@ Renderer::~Renderer()
         mDepthStencilState->release();
         mDepthStencilState = nullptr;
     }
+}
+//----------------------------------------------------------------------------------------------------------------------
 
-    if (mCameraBuffer)
-    {
-        mCameraBuffer->release();
-        mCameraBuffer = nullptr;
-    }
+void Renderer::buildPipeline()
+{
+    assert(mMetalDevice != nullptr);
+
+    PipelineBuilder builder(mMetalDevice);
+
+    mPipeline = builder.buildRender
+    (
+        mPixelFormat, 
+        MTL::PixelFormatDepth32Float,
+        VertexFormat::PNVertex, 
+        mSampleCount, 
+        "/default.metallib", 
+        "vertexMain", 
+        "fragmentMain"
+    );
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -169,10 +181,21 @@ void Renderer::updateFrame(CA::MetalDrawable* drawable, MTL::RenderPassDescripto
 
     //encoder->setVertexBuffer(buf->buffer(), 0, 0);
     encoder->setVertexBuffer(mTestMesh->vertexBuffer, 0, 0);
-    encoder->setVertexBuffer(mCameraBuffer, 0, 1);
+    encoder->setVertexBuffer(buf->buffer(), 0, 1);
+    encoder->setVertexBytes(&mTransformController.pvmMatrix(), sizeof(simd::float4x4), 2);
 
     encoder->setTriangleFillMode(MTL::TriangleFillModeLines);
 
+    encoder->drawIndexedPrimitives
+    (
+        MTL::PrimitiveTypeTriangle,
+        mTestMesh->indexCount,
+        MTL::IndexTypeUInt32,
+        mTestMesh->indexBuffer,
+        0,
+        buf->size()
+    );
+/*
     encoder->drawIndexedPrimitives(
         MTL::PrimitiveTypeTriangle,
         mTestMesh->indexCount,
@@ -180,7 +203,7 @@ void Renderer::updateFrame(CA::MetalDrawable* drawable, MTL::RenderPassDescripto
         mTestMesh->indexBuffer,
         0
     );
-/*
+
     encoder->drawPrimitives(
         MTL::PrimitiveTypeTriangle,
         NS::UInteger(0),
@@ -198,35 +221,29 @@ void Renderer::updateFrame(CA::MetalDrawable* drawable, MTL::RenderPassDescripto
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-void Renderer::buildPipeline()
+void Renderer::updateCamera()
 {
-    assert(mMetalDevice != nullptr);
-
-    PipelineBuilder builder(mMetalDevice);
-
-    mPipeline = builder.buildRender(
-        mPixelFormat, 
-        MTL::PixelFormatDepth32Float,
-        VertexFormat::PNVertex, 
-        mSampleCount, 
-        "/default.metallib", 
-        "vertexMain", 
-        "fragmentMain");
+    mTransformController.setPerspective
+    (
+        M_PI_4,
+        mWidth / mHeight,
+        0.1f,
+        100.0f
+    );
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-void Renderer::updateCamera()
+void Renderer::mouseDragged(float dx, float dy, bool controlPressed)
 {
-    mCamera.setPerspective(
-        0.785398f,
-        mWidth / mHeight,
-        0.1f,
-        1000.0f
-    );
-
-    auto* uniforms = static_cast<CameraUniforms*>(mCameraBuffer->contents());
-
-    uniforms->view       = mCamera.viewMatrix();
-    uniforms->projection = mCamera.projectionMatrix();
+    if (controlPressed)
+    {
+        mTransformController.rotZ(dx * 0.1f / M_PI);
+        mTransformController.zoom(-dy * 0.01f);
+    }
+    else
+    {
+        mTransformController.rotY(dx * 0.1f / M_PI);
+        mTransformController.rotX(dy * 0.1f / M_PI);
+    }
 }
 //----------------------------------------------------------------------------------------------------------------------

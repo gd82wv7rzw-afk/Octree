@@ -1,6 +1,6 @@
 
 #include <metal_stdlib>
-#include "Rendering/CameraUniforms.h"
+
 #include "Rendering/Vertices.h"
 
 using namespace metal;
@@ -12,15 +12,21 @@ struct VertexOut
 };
 //----------------------------------------------------------------------------------------------------------------------
 
-vertex VertexOut vertexMain(
-    PNVertex in [[stage_in]],
-    constant CameraUniforms& camera [[buffer(1)]])
+vertex VertexOut vertexMain
+(
+    PNVertex in                      [[stage_in]],
+    constant SimulationVertex* atoms [[buffer(1)]],
+    constant float4x4& pvm           [[buffer(2)]],
+    uint instanceID                  [[instance_id]]
+)
 {
     VertexOut out;
+    const float scale = 1e-2;
 
-    float4 worldPosition = float4(in.pos, 1.0);
-    //out.position = worldPosition;
-    out.position = camera.projection * camera.view * worldPosition;
+    float3 atomPos  = atoms[instanceID].pos;
+    float3 worldPos = in.pos * scale + atomPos;
+
+    out.position = pvm * float4(worldPos, 1.0f);
 
     return out;
 }

@@ -7,7 +7,7 @@ struct MetalView: NSViewRepresentable
 
     func makeNSView(context: Context) -> MTKView
     {
-        let view = MTKView()
+        let view = InteractiveMTKView()
 
         if let device = mainControler.metalDevice
         {
@@ -15,6 +15,12 @@ struct MetalView: NSViewRepresentable
         }
 
         mainControler.setPixelFormat(view.colorPixelFormat)
+
+        view.onMouseDragged = 
+        { 
+            dx, dy, controlPressed in
+            mainControler.mouseDragged(dx, dy, controlPressed)
+        }
         
         view.delegate = context.coordinator
         view.isPaused = false
@@ -56,6 +62,19 @@ class Coordinator: NSObject, MTKViewDelegate
     )
     {
         mainControler.drawableSizeWillChange(size)
+    }
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+class InteractiveMTKView: MTKView
+{
+    var onMouseDragged: ((Float, Float, Bool) -> Void)?
+
+    override func mouseDragged(with event: NSEvent)
+    {
+        let controlPressed = event.modifierFlags.contains(.control)
+
+        onMouseDragged?(Float(event.deltaX), Float(event.deltaY), controlPressed)
     }
 }
 //----------------------------------------------------------------------------------------------------------------------

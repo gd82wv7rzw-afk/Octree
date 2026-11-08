@@ -39,6 +39,8 @@ FOUNDATION_EXPORT MainControlerNotification const MainControlerParametersDidChan
 - (void)drawInView:(MTKView*)view;
 - (void)drawableSizeWillChange:(CGSize)size;
 
+- (void)mouseDragged:(float)dx :(float)dy :(BOOL)controlPressed;
+
 @end
 
 NS_ASSUME_NONNULL_END
