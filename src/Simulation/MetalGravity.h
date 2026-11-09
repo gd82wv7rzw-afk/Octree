@@ -55,10 +55,11 @@ class MetalGravity
         //--------------------------------------------------------------------------------------------------------------
 
         auto* getOutput() {return mIputOutputBuf.getOutputBuffer(); }
+        bool acquireOutput() { return mIputOutputBuf.acquireOutput(); }
         //--------------------------------------------------------------------------------------------------------------
 
         // call it after the rendering
-        void renderingIsDone() { mIputOutputBuf.releaseOutput();}
+        //void renderingIsDone() { mIputOutputBuf.releaseOutput();}
         //--------------------------------------------------------------------------------------------------------------
 
         const simd::float3& box() const { return mBox; }

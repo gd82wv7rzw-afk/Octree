@@ -50,16 +50,16 @@ vertex VertexOut vertexMain
     }
     if ( t < 0.5)
     {
-        out.color = mix(float3{0.0f, 1.0f, 1.0f}, float3{0.5f, 0.5f, 0.5f}, (t - 0.25f) * 4);
+        out.color = mix(float3{0.0f, 1.0f, 1.0f}, float3{0.25f, 0.5f, 0.5f}, (t - 0.25f) * 4);
         return out;
     }
-    if ( t < 0.75)
+    if ( t < 0.6)
     {
-        out.color = mix(float3{0.5f, 0.5f, 0.5f}, float3{1.0f, 1.0f, 0.0f}, (t - 0.5f) * 4);
+        out.color = mix(float3{0.25f, 0.5f, 0.5f}, float3{1.0f, 1.0f, 0.0f}, (t - 0.5f) * 10);
         return out;
     }
    
-    out.color = mix(float3{1.0f, 1.0f, 0.0f}, float3{1.0f, 0.0f, 0.0f}, (t - 0.75f) * 4);
+    out.color = mix(float3{1.0f, 1.0f, 0.0f}, float3{1.0f, 0.0f, 0.0f}, (t - 0.6f) * 2.5f);
     return out;
 }
 //----------------------------------------------------------------------------------------------------------------------

@@ -926,6 +926,8 @@ static void readLogPipe(
 
     if (!drawable || !renderPass) return;
 
+    bool newFrame = _metalSimulation->acquireOutput();
+
     _renderer->updateFrame
     (
         (__bridge CA::MetalDrawable*)drawable,
@@ -934,7 +936,7 @@ static void readLogPipe(
         _parameters.renderSettings.scale
     );
 
-    _metalSimulation->renderingIsDone();
+    //_metalSimulation->renderingIsDone();
 }
 //----------------------------------------------------------------------------------------------------------------------
 

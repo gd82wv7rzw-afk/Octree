@@ -4,6 +4,7 @@
 #include "Rendering/Vertices.h"
 
 #include <cstdint>
+#include <atomic>
 
 namespace Rendering
 {
@@ -35,18 +36,20 @@ class TripleBuffer
  
         void publishInput();        // Simulator: Kopieren abgeschlossen
         void releaseOutput();       // Renderer: GPU-Rendering abgeschlossen
+        bool acquireOutput();
         //--------------------------------------------------------------------------------------------------------------
 
     private:
 
-        static uint32_t encode(const BufferRoles& roles);
-        static BufferRoles decode(uint32_t value);
+        uint32_t encode(const BufferRoles& roles, bool dirty = false);
+        //static uint32_t encode(const BufferRoles& roles);
+        BufferRoles decode(uint32_t value);
         //--------------------------------------------------------------------------------------------------------------
 
         Buffer test;
 
         Buffer mBuffers[3];
-        uint32_t mRoles;
+        std::atomic<uint32_t> mRoles;
         //--------------------------------------------------------------------------------------------------------------
 };
 //----------------------------------------------------------------------------------------------------------------------

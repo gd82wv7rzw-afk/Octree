@@ -16,7 +16,7 @@ Renderer::Renderer(MTL::Device* device, MTL::CommandQueue* commandQueue)
     buildDepthStencilState();
     createDepthAndMSAATextures();
 
-    mTestMesh = MeshFactory::CreateIcoSphereMesh(mMetalDevice, 2, VertexFormat::PNVertex, true);
+    mTestMesh = MeshFactory::CreateIcoSphereMesh(mMetalDevice, 4, VertexFormat::PNVertex, true);
     //Create24FacesCube(mMetalDevice, VertexFormat::PNVertex);
 
     updateCamera();
