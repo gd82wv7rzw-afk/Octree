@@ -557,6 +557,7 @@ void MetalGravity::step()
     {
         //PROFILE_METAL_CALL("calculateAcelation", calculateAcelation(encoder, mNextAtoms.metalBuffer());)
         calculateAcelation(encoder, mNextAtoms.metalBuffer());
+        //mCpuForce.calculateAcceleration(mNextAtoms, mTree, mNatoms, mBox, mTheta);
         //encoder->memoryBarrier(MTL::BarrierScopeBuffers);
 
         //PROFILE_METAL_CALL("secondIntegralAndError", secondIntegralAndError(encoder);)

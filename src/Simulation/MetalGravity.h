@@ -6,6 +6,7 @@
 #include "MetalStuff/MetalArray.hpp"
 #include "MetalStuff/Pipeline/PipelineBuilder.h"
 #include "Rendering/TripleBuffer.h"
+#include "Simulation/CpuForce.h"
 
 #include <random>
 #include <Metal/Metal.hpp>
@@ -130,6 +131,9 @@ class MetalGravity
         PipelinePtr mIntegratteVelosetiesPipeline{nullptr};
         PipelinePtr mFindReinsertAtomsPipeline{nullptr};
         PipelinePtr mCopyOutpuPipeline{nullptr};
+        //--------------------------------------------------------------------------------------------------------------
+
+        //CpuForce mCpuForce;
         //--------------------------------------------------------------------------------------------------------------
 };
 //----------------------------------------------------------------------------------------------------------------------
