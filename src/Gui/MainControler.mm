@@ -237,10 +237,20 @@ static void readLogPipe(
     auto* running = &_isRunning;
     auto* isValid = &_hasValidSetup;
     MainControler* controller = self;
+    auto* renderer = _renderer.get();
 
     running->store(true);
 
-    _worker = std::thread([simulation, nAtoms, freeLength, running, isValid, controller]()
+    _worker = std::thread(
+        [
+            simulation, 
+            nAtoms, 
+            freeLength, 
+            running, 
+            isValid, 
+            controller,
+            renderer
+        ]()
     {
         printf("Configuration generation started\n");
         fflush(stdout);
@@ -257,6 +267,12 @@ static void readLogPipe(
 
         printf("Configuration generation finished\n");
         fflush(stdout);
+
+        {
+            auto b = simulation->box();
+            float s = sqrt(3.0f / simd::dot(b, b));
+            renderer->setBaseScale(s);
+        }
 
         running->store(false);
     });
@@ -276,10 +292,19 @@ static void readLogPipe(
     auto* running = &_isRunning;
     auto* isValid = &_hasValidSetup;
     MainControler* controller = self;
+    auto* renderer = _renderer.get();
 
     running->store(true);
 
-    _worker = std::thread([simulation, fileName, running, isValid, controller]()
+    _worker = std::thread(
+        [
+            simulation, 
+            fileName, 
+            running, 
+            isValid, 
+            controller,
+            renderer
+        ]()
     {
         printf("Configuration reading started\n");
         fflush(stdout);
@@ -296,6 +321,12 @@ static void readLogPipe(
         printf("Configuration reading finished\n");
         fflush(stdout);
 
+        {
+            auto b = simulation->box();
+            float s = sqrt(3.0f / simd::dot(b, b));
+            renderer->setBaseScale(s);
+        }
+        
         running->store(false);
     });
 }
@@ -899,7 +930,8 @@ static void readLogPipe(
     (
         (__bridge CA::MetalDrawable*)drawable,
         (__bridge MTL::RenderPassDescriptor*)renderPass,
-        _metalSimulation->getOutput()
+        _metalSimulation->getOutput(),
+        _parameters.renderSettings.scale
     );
 
     _metalSimulation->renderingIsDone();
@@ -941,6 +973,12 @@ static void readLogPipe(
         static_cast<float>(value),
         std::memory_order_relaxed
     );
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+- (void)setSphereScale:(double)value
+{
+    _parameters.renderSettings.scale = static_cast<float>(value);
 }
 //----------------------------------------------------------------------------------------------------------------------
 

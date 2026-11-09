@@ -17,18 +17,34 @@ class Renderer
     public:
  
         using Buffer = MetalArray<SimulationVertex>;
+        //--------------------------------------------------------------------------------------------------------------
 
         Renderer( MTL::Device* device, MTL::CommandQueue* commandQueue);
+        //--------------------------------------------------------------------------------------------------------------
 
         ~Renderer();
+        //--------------------------------------------------------------------------------------------------------------
 
         void setPixelFormat(MTL::PixelFormat pixelFormat) { mPixelFormat = pixelFormat;}
+        //--------------------------------------------------------------------------------------------------------------
 
         void resize(float width, float height);
+        //--------------------------------------------------------------------------------------------------------------
 
-        void updateFrame(CA::MetalDrawable* drawable, MTL::RenderPassDescriptor* renderPass, Buffer* buf);
+        void updateFrame
+        (
+            CA::MetalDrawable* drawable, 
+            MTL::RenderPassDescriptor* renderPass, 
+            Buffer* buf,
+            float scale
+        );
+        //--------------------------------------------------------------------------------------------------------------
 
         void mouseDragged(float dx, float dy, bool controlPressed);
+        //--------------------------------------------------------------------------------------------------------------
+
+        void setBaseScale(float baseScale) { mBaseScale = baseScale; }
+        //--------------------------------------------------------------------------------------------------------------
 
     private:
 
@@ -63,7 +79,8 @@ class Renderer
  
         // Weitere Ressourcen wie bisher
         float mWidth = 1.0f;
-        float mHeight = 1.0f;  
+        float mHeight = 1.0f; 
+        float mBaseScale = 1.0f; 
         Rendering::TransformController mTransformController;
         //MTL::Buffer* mCameraBuffer{nullptr};
 

@@ -22,14 +22,18 @@ struct SimulationSettings
 };
 //----------------------------------------------------------------------------------------------------------------------
 
+struct RenderingSettings
+{
+    float scale{1.f};
+};
+
 struct GuiParameter
 {
     FileNames fileNames;
-
     SimulationSettings simulationSettings;
+    RenderingSettings renderSettings;
 
     int trajectoryFrequency{100};
-
     bool recordTrajectory{false};
 };
 //----------------------------------------------------------------------------------------------------------------------

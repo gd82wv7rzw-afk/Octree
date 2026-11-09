@@ -20,12 +20,13 @@ vertex VertexOut vertexMain
     constant SimulationVertex* atoms [[buffer(1)]],
     constant float4x4& pvm           [[buffer(2)]],
     constant float4x4& rot           [[buffer(3)]],
+    constant float&    scale         [[buffer(4)]],
     uint instanceID                  [[instance_id]]
 )
 {
     VertexOut out;
-    const float scale = 2.5e-3;
-    const float maxVSquare = 2.5f;
+    //const float scale = 2.5e-2;
+    const float maxVSquare = 3.0f;
 
     float3 atomPos  = atoms[instanceID].pos;
     float  vSquare  = dot(atoms[instanceID].vel, atoms[instanceID].vel);
@@ -41,19 +42,24 @@ vertex VertexOut vertexMain
     // color
     float t = vSquare / maxVSquare; //log(1.0f + vSquare) / log(1.0f + maxVSquare);
     t = clamp(t, 0.0f, 1.0f);
-    float3 color;
 
+    if ( t < 0.25)
+    {
+        out.color = mix(float3{0.0f, 0.0f, 1.0f}, float3{0.0f, 1.0f, 1.0f}, t * 4);
+        return out;
+    }
     if ( t < 0.5)
     {
-        color = mix(float3{0.0f, 0.0f, 1.0f}, float3{0.5f, 0.5f, 0.5f}, t * 2);
+        out.color = mix(float3{0.0f, 1.0f, 1.0f}, float3{0.5f, 0.5f, 0.5f}, (t - 0.25f) * 4);
+        return out;
     }
-    else
+    if ( t < 0.75)
     {
-        color = mix(float3{0.5f, 0.5f, 0.5f}, float3{1.0f, 0.0f, 0.0f}, (t - 0.5f) * 2);
+        out.color = mix(float3{0.5f, 0.5f, 0.5f}, float3{1.0f, 1.0f, 0.0f}, (t - 0.5f) * 4);
+        return out;
     }
-
-    out.color = color;
-    
+   
+    out.color = mix(float3{1.0f, 1.0f, 0.0f}, float3{1.0f, 0.0f, 0.0f}, (t - 0.75f) * 4);
     return out;
 }
 //----------------------------------------------------------------------------------------------------------------------

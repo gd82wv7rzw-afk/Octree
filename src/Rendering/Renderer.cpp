@@ -138,9 +138,17 @@ void Renderer::resize(float width, float height)
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-void Renderer::updateFrame(CA::MetalDrawable* drawable, MTL::RenderPassDescriptor* renderPass, Buffer* buf)
+void Renderer::updateFrame
+(
+    CA::MetalDrawable* drawable, 
+    MTL::RenderPassDescriptor* renderPass, 
+    Buffer* buf,
+    float scale
+)
 {
     if (!drawable || !renderPass || !buf) return;
+
+    scale *= mBaseScale;
 
     NS::AutoreleasePool* pool = NS::AutoreleasePool::alloc()->init();
 
@@ -183,6 +191,7 @@ void Renderer::updateFrame(CA::MetalDrawable* drawable, MTL::RenderPassDescripto
     encoder->setVertexBuffer(buf->buffer(), 0, 1);
     encoder->setVertexBytes(&mTransformController.pvmMatrix(), sizeof(simd::float4x4), 2);
     encoder->setVertexBytes(&mTransformController.rotMatrix(), sizeof(simd::float4x4), 3);
+    encoder->setVertexBytes(&scale, sizeof(float), 4);
 
     //encoder->setTriangleFillMode(MTL::TriangleFillModeLines);
 
@@ -222,13 +231,13 @@ void Renderer::mouseDragged(float dx, float dy, bool controlPressed)
 {
     if (controlPressed)
     {
-        mTransformController.rotZ(dx * 0.1f / M_PI);
-        mTransformController.zoom(-dy * 0.01f);
+        mTransformController.rotZ(dx * 0.05f / M_PI);
+        mTransformController.zoom(-dy * 0.02f);
     }
     else
     {
-        mTransformController.rotY(dx * 0.1f / M_PI);
-        mTransformController.rotX(dy * 0.1f / M_PI);
+        mTransformController.rotY(dx * 0.02f / M_PI);
+        mTransformController.rotX(dy * 0.02f / M_PI);
     }
 }
 //----------------------------------------------------------------------------------------------------------------------

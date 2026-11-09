@@ -43,6 +43,7 @@ FOUNDATION_EXPORT MainControlerNotification const MainControlerParametersDidChan
 
 - (void)setTemperature:(double)value;
 - (void)setDt:(double)value;
+- (void)setSphereScale:(double)value;
 
 @end
 

@@ -61,8 +61,11 @@ class MetalGravity
         void renderingIsDone() { mIputOutputBuf.releaseOutput();}
         //--------------------------------------------------------------------------------------------------------------
 
-        auto* tree()       noexcept {return &mTree;}
-        auto* tree() const noexcept {return &mTree;}
+        const simd::float3& box() const { return mBox; }
+        //--------------------------------------------------------------------------------------------------------------
+
+        //auto* tree()       noexcept {return &mTree;}
+        //auto* tree() const noexcept {return &mTree;}
         //--------------------------------------------------------------------------------------------------------------
 
     private:

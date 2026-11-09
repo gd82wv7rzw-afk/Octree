@@ -168,7 +168,7 @@ struct SidePanelView: View
                         .monospacedDigit()
                         .frame(maxWidth: .infinity, alignment: .trailing)
 
-                    Slider(value: $temperature, in: 0.9...1.1)
+                    Slider(value: $temperature, in: 0.99...1.01)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -220,10 +220,23 @@ struct SidePanelView: View
                         .font(.body)
                         .foregroundColor(.secondary)
 
-                    Stepper(value: $sphereScale, in: 0.1...3.0, step: 0.1)
+                    HStack
                     {
-                        Text(String(format: "%.1f", sphereScale))
-                    }
+                        TextField(value: $sphereScale, format: .number.precision(.fractionLength(1)))
+                        {
+                            EmptyView()
+                        }
+                        .labelsHidden()
+                        .frame(width: .infinity)
+                        .textFieldStyle(.roundedBorder)
+
+                        Stepper("", value: $sphereScale, in: 0.1...100.0, step: 0.1)
+                            .labelsHidden()
+                    }  
+                }
+                .onChange(of: sphereScale) 
+                {
+                    mainControler.setSphereScale(sphereScale)
                 }
             }
             //----------------------------------------------------------------------------------------------------------
