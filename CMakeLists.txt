@@ -73,6 +73,7 @@ set(APP_SOURCES
     "${SOURCE_DIR}/Rendering/TransformController.cpp"
     "${SOURCE_DIR}/MetalStuff/Pipeline/VertexDescriptorFactory.cpp"
     "${SOURCE_DIR}/Rendering/TripleBuffer.cpp"
+    "${SOURCE_DIR}/Simulation/PostProzess.cpp"
 )
 
 add_executable(${APP_NAME} MACOSX_BUNDLE ${APP_SOURCES})

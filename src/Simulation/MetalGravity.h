@@ -9,6 +9,7 @@
 
 #include <random>
 #include <Metal/Metal.hpp>
+#include <functional>
 
 namespace Gui 
 {
@@ -43,6 +44,7 @@ class MetalGravity
         void start(Gui::GuiParameter* parameters) { mIsRunning = true; printf("run\n"); run(parameters); }
         void stop()  { mIsRunning = false; }
         void run(Gui::GuiParameter* parameters);
+        void setStepCallback(std::function<void()> callback) { mStepCallback = std::move(callback); }
         //--------------------------------------------------------------------------------------------------------------
         
         void step();
@@ -90,6 +92,7 @@ class MetalGravity
         std::atomic_bool mIsRunning{false};
         Rendering::TripleBuffer mIputOutputBuf;
         Gui::GuiParameter* mParameters{nullptr};
+        std::function<void()> mStepCallback;
         //--------------------------------------------------------------------------------------------------------------
 
         /// @brief the number of atoms
@@ -101,10 +104,10 @@ class MetalGravity
         //--------------------------------------------------------------------------------------------------------------
 
         /// @brief the barnes hut criteria, if theta > mTheta => go in the node
-        float mTheta{0.8f};
+        float mTheta{0.7f};
         //--------------------------------------------------------------------------------------------------------------
 
-        float mDt{0.1f};
+        float mDt{0.01f};
         int mIterationSteps{0};
         int mCounter{0};
         int mStep{0};

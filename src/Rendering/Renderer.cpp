@@ -1,5 +1,6 @@
 #include "Renderer.h"
 #include "MetalStuff/Pipeline/VertexDescriptorFactory.h"
+//#include "Simulation/PostProzess.h"
 
 #include <stdexcept>
 #include <Foundation/Foundation.hpp>
@@ -16,8 +17,9 @@ Renderer::Renderer(MTL::Device* device, MTL::CommandQueue* commandQueue)
     buildDepthStencilState();
     createDepthAndMSAATextures();
 
-    mTestMesh = MeshFactory::CreateIcoSphereMesh(mMetalDevice, 4, VertexFormat::PNVertex, true);
+    //mTestMesh = MeshFactory::CreateIcoSphereMesh(mMetalDevice, 4, VertexFormat::PNVertex, true);
     //Create24FacesCube(mMetalDevice, VertexFormat::PNVertex);
+    rebuildSphere(4);
 
     updateCamera();
 }
@@ -62,6 +64,13 @@ void Renderer::buildPipeline()
         "vertexMain", 
         "fragmentMain"
     );
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+void Renderer::rebuildSphere(int resolution)
+{
+    mTestMesh.release();
+    mTestMesh = (MeshFactory::CreateIcoSphereMesh(mMetalDevice, resolution, VertexFormat::PNVertex, true));
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -192,6 +201,7 @@ void Renderer::updateFrame
     encoder->setVertexBytes(&mTransformController.pvmMatrix(), sizeof(simd::float4x4), 2);
     encoder->setVertexBytes(&mTransformController.rotMatrix(), sizeof(simd::float4x4), 3);
     encoder->setVertexBytes(&scale, sizeof(float), 4);
+    encoder->setVertexBytes(&mBaseScale, sizeof(float), 5);
 
     //encoder->setTriangleFillMode(MTL::TriangleFillModeLines);
 

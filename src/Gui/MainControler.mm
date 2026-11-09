@@ -142,6 +142,8 @@ static void readLogPipe(
     std::atomic<bool> isLogging;
 
     std::unique_ptr<Simulation::MetalGravity> _metalSimulation;
+
+    DtCallback _dtCallback;
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -342,6 +344,20 @@ static void readLogPipe(
     auto* simulation = _metalSimulation.get();
     auto* running = &_isRunning;
     auto* param = &_parameters;
+    MainControler* controller = self;
+
+    _metalSimulation->setStepCallback([controller]()
+    {
+        // Wird nach jedem Simulationsschritt aufgerufen
+        auto dt = controller->_parameters.simulationSettings.dt.load(std::memory_order_relaxed);
+
+        if (controller->_dtCallback)
+        {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                controller->_dtCallback(dt);
+            });
+        }
+    });
 
     running->store(true);
 
@@ -981,6 +997,18 @@ static void readLogPipe(
 - (void)setSphereScale:(double)value
 {
     _parameters.renderSettings.scale = static_cast<float>(value);
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+- (void)rebuildSphere:(int)value
+{
+    _renderer->rebuildSphere(value);
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+- (void)setDtCallback:(DtCallback)callback
+{
+    _dtCallback = [callback copy];
 }
 //----------------------------------------------------------------------------------------------------------------------
 

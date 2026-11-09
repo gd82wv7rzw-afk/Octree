@@ -31,6 +31,9 @@ class Renderer
         void resize(float width, float height);
         //--------------------------------------------------------------------------------------------------------------
 
+        void rebuildSphere(int resolution);
+        //--------------------------------------------------------------------------------------------------------------
+
         void updateFrame
         (
             CA::MetalDrawable* drawable, 

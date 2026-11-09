@@ -593,27 +593,28 @@ void MetalGravity::step()
     ++mCounter;
 
     // securety step control
-    if(step > 10)
+    if(step > 15)
     {
         mDt /= 2;
         printf("degrease the dt to %11.7f\n", mDt);
     }
 
-//  if(mCounter == 100)
-//  {
-//      if(mIterationSteps < 4)
-//      {
-//          mDt *= 2;
-//          printf("increase the dt to %11.7f\n", mDt);
-//      }
+    if(mCounter == 50)
+    {
+        if(mIterationSteps < 5)
+        {
+            mDt *= 2.f;
+            printf("increase the dt to %11.7f\n", mDt);
+        }
 
 //      if(mDt > 15)
 //      {
 //          mDt = 12.8;
 //      }
 //      mIterationSteps = 0;
-//      mCounter = 0;
-//  }
+        
+        mCounter = 0;
+    }
 
     mParameters->simulationSettings.dt.store(mDt, std::memory_order_relaxed);
    
@@ -632,6 +633,7 @@ void MetalGravity::step()
     commandBuffer->waitUntilCompleted();
 
     mIputOutputBuf.publishInput();
+    if (mStepCallback) mStepCallback();
 
     //encoder->release();
     //commandBuffer->release();

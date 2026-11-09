@@ -15,8 +15,8 @@ struct SidePanelView: View
     @State private var hasValidSetup = false
     @State private var sphereResolution = 2
     @State private var sphereScale = 1.0
-    @State private var delta_t: Double = 0.1
-    @State private var temperature: Double = 1.0
+    @State private var delta_t: Double = 0.0015
+    @State private var temperature: Double = 0.999
     @State private var lightColor: Color = .white
     @State private var materialColor: Color = .red
     @State private var lightIntensity = 1.0
@@ -32,6 +32,9 @@ struct SidePanelView: View
     {
         self.mainControler = mainControler
         _atomCount = State(initialValue: Int(mainControler.atomCount))
+        mainControler.setSphereScale(sphereScale) 
+        mainControler.setTemperature(temperature)  
+        mainControler.setDt(delta_t)     
     }
     //------------------------------------------------------------------------------------------------------------------
 
@@ -129,7 +132,7 @@ struct SidePanelView: View
                         .monospacedDigit()
                         .frame(maxWidth: .infinity, alignment: .trailing)
 
-                    Slider(value: $delta_t, in: 1e-2...1)
+                    Slider(value: $delta_t, in: 1e-4...0.1)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -168,7 +171,7 @@ struct SidePanelView: View
                         .monospacedDigit()
                         .frame(maxWidth: .infinity, alignment: .trailing)
 
-                    Slider(value: $temperature, in: 0.99...1.01)
+                    Slider(value: $temperature, in: 0.9...1.00)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -206,10 +209,14 @@ struct SidePanelView: View
                         .font(.body)
                         .foregroundColor(.secondary)
 
-                    Stepper(value: $sphereResolution, in: 0...5)
+                    Stepper(value: $sphereResolution, in: 1...8)
                     {
                         Text("\(sphereResolution)")
                     }
+                }
+                .onChange(of: sphereResolution) 
+                {
+                    mainControler.rebuildSphere(Int32(sphereResolution))
                 }
 
                 Divider()
@@ -242,6 +249,13 @@ struct SidePanelView: View
             //----------------------------------------------------------------------------------------------------------
         }
         .formStyle(.grouped)
+        .onAppear
+        {
+            mainControler.setDtCallback 
+            { value in
+                delta_t = value
+            }
+        } 
         //--------------------------------------------------------------------------------------------------------------
     }
     //------------------------------------------------------------------------------------------------------------------
@@ -267,6 +281,6 @@ struct SidePanelView: View
                 Slider(value: value, in: range)
             }
         }
-    }
+    }  
 }
 //----------------------------------------------------------------------------------------------------------------------

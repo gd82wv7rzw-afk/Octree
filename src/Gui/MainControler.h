@@ -7,6 +7,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 typedef NSNotificationName MainControlerNotification;
+typedef void (^DtCallback)(double value);
 
 FOUNDATION_EXPORT MainControlerNotification const MainControlerParametersDidChangeNotification;
 
@@ -44,6 +45,9 @@ FOUNDATION_EXPORT MainControlerNotification const MainControlerParametersDidChan
 - (void)setTemperature:(double)value;
 - (void)setDt:(double)value;
 - (void)setSphereScale:(double)value;
+- (void)rebuildSphere:(int)value;
+
+- (void)setDtCallback:(DtCallback)callback;
 
 @end
 
