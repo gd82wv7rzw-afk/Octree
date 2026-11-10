@@ -40,6 +40,11 @@ namespace
         acc->setFormat(MTL::VertexFormatFloat3);
         acc->setBufferIndex(0);
         acc->setOffset(offsetof(Rendering::SimulationVertex, acc));
+
+        auto ePot = attributes->object(3);
+        ePot->setFormat(MTL::VertexFormatFloat);
+        ePot->setBufferIndex(0);
+        ePot->setOffset(offsetof(Rendering::SimulationVertex, ePot));
     }
     //-------------------------------------------------------------------------------------------------------------------
 

@@ -22,9 +22,12 @@ float3 calculatePeriodicDistance(thread const float3& a, thread const float3&b, 
 }
 //----------------------------------------------------------------------------------------------------------------------
 
-float3 grad(const thread float3& x)
+float4 grad(const thread float3& x)
 {
     auto r2 = dot(x,x) + 1e-10f;
+
+    if (r2 < 0.1) r2 = 0.1f;
+    //auto r  = sqrt(r2);
     
     // U = 4 (1 / r^2 - 1 / r)
     // grad(U) = 4 ( -r / r^4 + r / r^3)
@@ -32,10 +35,13 @@ float3 grad(const thread float3& x)
     auto invR  = rsqrt(r2);             // 1/r
     auto invR3 = invR * invR * invR;    // 1/r^3
     auto invR4 = invR3 * invR;          // 1/r^4
+    auto invR6 = invR3 * invR;
 
     auto factor = (-2.f * invR4 + invR3) * 4;
+    auto ePot   = (1.f / r2 - invR) * 4;
+    auto acc    = x * factor;
 
-    return x * factor;
+    return {acc.x, acc.y, acc.z, ePot};
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -75,7 +81,8 @@ void calculateClusterAcceleration(
     thread const float3& imageWaitsR,
     constant const float3& box,
     const float wait,
-    device float3& acc
+    device float3& acc,
+    device float&  ePot
 )
 {
     for(int mask = 0; mask < 8; ++mask)
@@ -111,7 +118,10 @@ void calculateClusterAcceleration(
 
         if (!validImage) continue;
 
-        acc += grad(rImage) * (wait * imageWeight);
+        auto enerGrad = grad(rImage) * (wait * imageWeight);
+
+        acc += enerGrad.xyz;
+        ePot += enerGrad.w;
     }
 
 }
@@ -157,6 +167,7 @@ kernel void calculateAcceleration(
 
     // 3. Dein alter Code, aber wir nutzen jetzt getBranch(idx)
     atoms[tid].value.acc = {0.f, 0.f, 0.f};
+    atoms[tid].value.ePot= 0.f;
 
     uint rootId  = atoms[tid].rootId;
     uint rootIdx = rootId & IndexMask;
@@ -205,6 +216,7 @@ kernel void calculateAcceleration(
                 break;
             }
 
+            /*
             if (isBranch)
             {
                 float3 minPos = floor( rOther / width) * width;
@@ -216,11 +228,17 @@ kernel void calculateAcceleration(
                 float3 imageWaitsL = calculateImageWaitsL(minR, maxR, box, width);
                 float3 imageWaitsR = float3{1.f, 1.f, 1.f} - imageWaitsL;
 
-                calculateClusterAcceleration(r, imageWaitsL, imageWaitsR, box, wait, atoms[tid].value.acc);
+                calculateClusterAcceleration(r, imageWaitsL, imageWaitsR, box, wait, atoms[tid].value.acc, atoms[tid].value.ePot);
+
+                //auto enerGrad = grad(r);
             }
             else
+            */
             {
-                atoms[tid].value.acc += grad(r);
+                auto enerGrad = grad(r) * wait;
+                
+                atoms[tid].value.acc += enerGrad.xyz;
+                atoms[tid].value.ePot += enerGrad.w;
             }
         }
 

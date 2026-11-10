@@ -105,10 +105,10 @@ class MetalGravity
         //--------------------------------------------------------------------------------------------------------------
 
         /// @brief the barnes hut criteria, if theta > mTheta => go in the node
-        float mTheta{0.7f};
+        float mTheta{0.5f};
         //--------------------------------------------------------------------------------------------------------------
 
-        float mDt{0.01f};
+        float mDt{0.0004f};
         int mIterationSteps{0};
         int mCounter{0};
         int mStep{0};

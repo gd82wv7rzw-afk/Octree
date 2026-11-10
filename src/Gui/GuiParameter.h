@@ -14,8 +14,8 @@ struct FileNames
 
 struct SimulationSettings
 {
-    int nAtoms{int(1e5)};
-    float meanFreeDistance{1e2};
+    int nAtoms{int(1e4)};
+    float meanFreeDistance{1e1};
     bool randomConfiguration{true};
     std::atomic<float> temperature{0.998f};
     std::atomic<float> dt{0.005f};

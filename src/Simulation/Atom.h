@@ -14,10 +14,12 @@ struct Atom
     float3 pos{0.f, 0.f, 0.f};
     float3 vel{0.f, 0.f, 0.f};
     float3 acc{0.f, 0.f, 0.f};
+    float ePot{0.f};
 #else
     simd::float3 pos{0.f, 0.f, 0.f};
     simd::float3 vel{0.f, 0.f, 0.f};
     simd::float3 acc{0.f, 0.f, 0.f};
+    float ePot{0.f};
 #endif
 };
 //----------------------------------------------------------------------------------------------------------------------

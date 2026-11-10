@@ -28,6 +28,7 @@ vertex VertexOut vertexMain
     VertexOut out;
 
     float3 atomPos  = atoms[instanceID].pos;
+    float3 atomAcc  = atoms[instanceID].acc;
     float  vSquare  = dot(atoms[instanceID].vel, atoms[instanceID].vel) - eKin.y;
     float maxVSquare = eKin.x - eKin.y;
     maxVSquare *= 2;
@@ -41,7 +42,7 @@ vertex VertexOut vertexMain
     out.normal = normalize((rot * float4(in.normale, 0.0f)).xyz);
 
     // color
-    float t = vSquare / maxVSquare; //log(1.0f + vSquare) / log(1.0f + maxVSquare);
+    float t = (vSquare)/ maxVSquare; //log(1.0f + vSquare) / log(1.0f + maxVSquare);
     t = clamp(t, 0.0f, 1.0f);
 
     if ( t < 0.5)

@@ -42,6 +42,19 @@ void MetalGravity::generateRandomConfiguration(int nAtoms, float freelength)
     mNeadReinsert.allocate(mDevice, mNatoms);
 
     // generate random points and veloseties inside the box
+
+    const float spacing = 10.f;
+
+    const uint32_t nx = static_cast<uint32_t>(std::floor(mBox.x / spacing));
+    const uint32_t ny = static_cast<uint32_t>(std::floor(mBox.y / spacing));
+    const uint32_t nz = static_cast<uint32_t>(std::floor(mBox.z / spacing));
+
+    //if (nx * ny * nz < mNatoms) throw std::runtime_error("Box too small for regular particle arrangement");
+
+    const float dx = mBox.x / nx;
+    const float dy = mBox.y / ny;
+    const float dz = mBox.z / nz;
+
     for (int i = 0; i < mNatoms; ++i) 
     {
         float3 point;
@@ -62,9 +75,20 @@ void MetalGravity::generateRandomConfiguration(int nAtoms, float freelength)
             {
                 point = p;
                 break;
-            }
+            }       
             //printf("random point: %f\t%f\n", length(p), length(mBox/2));
         };  
+/*
+        const uint32_t x = i % nx;
+        const uint32_t y = (i / nx) % ny;
+        const uint32_t z = i / (nx * ny);
+
+        float3 point {
+            -0.5f * mBox.x + (x + 0.5f) * dx,
+            -0.5f * mBox.y + (y + 0.5f) * dy,
+            -0.5f * mBox.z + (z + 0.5f) * dz
+        };
+*/
               
         float3 v1
         {
@@ -72,6 +96,8 @@ void MetalGravity::generateRandomConfiguration(int nAtoms, float freelength)
             std::normal_distribution<float>(0.0f, 1.f)(mRandom),
             std::normal_distribution<float>(0.0f, 1.f)(mRandom)
         }; 
+
+        v1 = simd::cross(float3{0.f, 0.f, 1.f}, point) * mNatoms;
 
         v1 /= mNatoms;
 
@@ -600,13 +626,13 @@ void MetalGravity::step()
         printf("degrease the dt to %11.7f\n", mDt);
     }
 
-    if(mCounter == 50)
-    {
-        if(mIterationSteps < 5)
-        {
-            mDt *= 2.f;
-            printf("increase the dt to %11.7f\n", mDt);
-        }
+//  if(mCounter == 50)
+//  {
+//      if(mIterationSteps < 5)
+//      {
+//          mDt *= 2.f;
+//          printf("increase the dt to %11.7f\n", mDt);
+//      }
 
 //      if(mDt > 15)
 //      {
@@ -614,8 +640,8 @@ void MetalGravity::step()
 //      }
 //      mIterationSteps = 0;
         
-        mCounter = 0;
-    }
+//      mCounter = 0;
+//  }
 
     mParameters->simulationSettings.dt.store(mDt, std::memory_order_relaxed);
    
@@ -781,7 +807,7 @@ void MetalGravity::run(Gui::GuiParameter* parameters)
         auto endTime = std::chrono::steady_clock::now();
         auto time = std::chrono::duration<double, std::micro>(endTime - startTime).count() * 1e-6;
 
-        printf("Step: %7i\tdt:%14.7lf\tTotalTime: %14.7lfs\n", mStep, dt(), time);
+        //printf("Step: %7i\tdt:%14.7lf\tTotalTime: %14.7lfs\n", mStep, dt(), time);
 
         ++mStep;
     }  

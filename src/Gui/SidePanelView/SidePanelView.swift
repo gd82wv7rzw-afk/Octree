@@ -13,9 +13,9 @@ struct SidePanelView: View
     @State private var run:  Bool = false
     @State private var recordTrajectory: Bool = false    
     @State private var hasValidSetup = false
-    @State private var sphereResolution = 2
-    @State private var sphereScale = 1.0
-    @State private var delta_t: Double = 0.0015
+    @State private var sphereResolution = 4
+    @State private var sphereScale = 2.0
+    @State private var delta_t: Double = 0.0004
     @State private var temperature: Double = 0.999
     @State private var lightColor: Color = .white
     @State private var materialColor: Color = .red
@@ -181,6 +181,7 @@ struct SidePanelView: View
             }
             //----------------------------------------------------------------------------------------------------------
 
+            /*
             // Light & Color
             Section
             {
@@ -198,6 +199,7 @@ struct SidePanelView: View
                 .foregroundColor(.secondary)    
                 //------------------------------------------------------------------------------------------------------ 
             }
+            */
             //----------------------------------------------------------------------------------------------------------
 
             // resolution and scale
