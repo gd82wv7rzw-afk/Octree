@@ -26,12 +26,14 @@ float3 grad(const thread float3& x)
 {
     auto r2 = dot(x,x) + 1e-10f;
     
+    // U = 4 (1 / r^2 - 1 / r)
+    // grad(U) = 4 ( -r / r^4 + r / r^3)
     // rsqrt(r2) ist 1/r. Das ist extrem schnell auf Apple Silicon.
     auto invR  = rsqrt(r2);             // 1/r
     auto invR3 = invR * invR * invR;    // 1/r^3
     auto invR4 = invR3 * invR;          // 1/r^4
 
-    auto factor = -2.f * invR4 + invR3;
+    auto factor = (-2.f * invR4 + invR3) * 4;
 
     return x * factor;
 }

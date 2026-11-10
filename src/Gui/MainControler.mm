@@ -144,6 +144,8 @@ static void readLogPipe(
     std::unique_ptr<Simulation::MetalGravity> _metalSimulation;
 
     DtCallback _dtCallback;
+
+    MTKView* _metalView;
 }
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -221,6 +223,15 @@ static void readLogPipe(
 
     // renderer
     _renderer = std::make_unique<Rendering::Renderer>(_cppDevice, _commandQueue);
+
+    // wake up
+    [
+        [[NSWorkspace sharedWorkspace] notificationCenter]
+        addObserver:self
+        selector:@selector(screensDidWake:)
+        name:NSWorkspaceScreensDidWakeNotification
+        object:nil
+    ];
 
     return self;
 }
@@ -410,6 +421,11 @@ static void readLogPipe(
     {
         _cppDevice->release();
     }
+
+    [
+        [[NSWorkspace sharedWorkspace] notificationCenter]
+        removeObserver:self
+    ];
 
     [super dealloc];
 }
@@ -935,6 +951,8 @@ static void readLogPipe(
 
 - (void)drawInView:(MTKView*)view
 {
+    _metalView = view;
+
     if (!_renderer) return;
 
     id<CAMetalDrawable> drawable = view.currentDrawable;
@@ -1009,6 +1027,16 @@ static void readLogPipe(
 - (void)setDtCallback:(DtCallback)callback
 {
     _dtCallback = [callback copy];
+}
+//----------------------------------------------------------------------------------------------------------------------
+
+- (void)screensDidWake:(NSNotification*)notification
+{
+    MTKView* view = _metalView;
+    if (!view) return;
+
+    view.paused = NO;
+    [view setNeedsDisplay:YES];
 }
 //----------------------------------------------------------------------------------------------------------------------
 

@@ -21,15 +21,16 @@ vertex VertexOut vertexMain
     constant float4x4& pvm           [[buffer(2)]],
     constant float4x4& rot           [[buffer(3)]],
     constant float&    scale         [[buffer(4)]],
-    constant float&    baseScale     [[buffer(5)]],
+    constant float3&   eKin          [[buffer(5)]],
     uint instanceID                  [[instance_id]]
 )
 {
     VertexOut out;
-    const float maxVSquare = 1e-5f;
 
     float3 atomPos  = atoms[instanceID].pos;
-    float  vSquare  = dot(atoms[instanceID].vel, atoms[instanceID].vel) * baseScale *baseScale;
+    float  vSquare  = dot(atoms[instanceID].vel, atoms[instanceID].vel) - eKin.y;
+    float maxVSquare = eKin.x - eKin.y;
+    maxVSquare *= 2;
 
     float3 localPos = in.pos * scale + atomPos;
 

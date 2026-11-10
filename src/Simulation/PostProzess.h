@@ -3,6 +3,8 @@
 #include "MetalStuff/MetalArray.hpp"
 #include "Rendering/Vertices.h"
 
+#include <simd/simd.h>
+
 namespace Simulation 
 {
 
@@ -12,7 +14,7 @@ class PostProzess
 
         using Buffer = MetalArray<Rendering::SimulationVertex>;
 
-        float eKin(Buffer* data);
+        simd::float3 eKin(Buffer* data);
 
     private:
 

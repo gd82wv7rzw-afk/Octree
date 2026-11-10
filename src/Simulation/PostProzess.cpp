@@ -8,20 +8,25 @@ using namespace Simulation;
 using namespace simd;
 using namespace Rendering;
 
-float PostProzess::eKin(Buffer* data)
+float3 PostProzess::eKin(Buffer* data)
 {
-    float ekin = 0.f;
+    float min = 1e3;
+    float max = -1e3;
+    float ekin = 0;
 
-    #pragma omp parallel for reduction(+:ekin)
+    #pragma omp parallel for reduction(+:ekin) reduction(min:min) reduction(max:max)
     for (int i = 0; i < data->size(); ++i)
     {
-        auto v = (*data)[i].vel;
+        auto v  = (*data)[i].vel;
+        auto a2 = dot(v, v);
 
-        ekin += dot(v, v);
+        ekin += a2;
+        if (a2 < min) min = a2;
+        if (a2 > max) max = a2;        
     }
     ekin /= data->size();
-    printf("Ekin =%f\n", ekin);
+    //printf("Ekin =%f\n", ekin);
 
-    return ekin;
+    return {ekin, min, max};
 }
 //----------------------------------------------------------------------------------------------------------------------

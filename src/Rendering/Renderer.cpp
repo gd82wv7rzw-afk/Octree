@@ -1,6 +1,6 @@
 #include "Renderer.h"
 #include "MetalStuff/Pipeline/VertexDescriptorFactory.h"
-//#include "Simulation/PostProzess.h"
+#include "Simulation/PostProzess.h"
 
 #include <stdexcept>
 #include <Foundation/Foundation.hpp>
@@ -191,6 +191,9 @@ void Renderer::updateFrame
         return;
     }
 
+    Simulation::PostProzess postProcess;
+    auto eKin = postProcess.eKin(buf);
+
     encoder->setRenderPipelineState(mPipeline.get());
     encoder->setDepthStencilState(mDepthStencilState);
     encoder->setFrontFacingWinding(MTL::WindingCounterClockwise);
@@ -201,7 +204,7 @@ void Renderer::updateFrame
     encoder->setVertexBytes(&mTransformController.pvmMatrix(), sizeof(simd::float4x4), 2);
     encoder->setVertexBytes(&mTransformController.rotMatrix(), sizeof(simd::float4x4), 3);
     encoder->setVertexBytes(&scale, sizeof(float), 4);
-    encoder->setVertexBytes(&mBaseScale, sizeof(float), 5);
+    encoder->setVertexBytes(&eKin, sizeof(simd::float3), 5);
 
     //encoder->setTriangleFillMode(MTL::TriangleFillModeLines);
 
