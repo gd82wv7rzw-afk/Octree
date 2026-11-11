@@ -626,20 +626,16 @@ void MetalGravity::step()
         printf("degrease the dt to %11.7f\n", mDt);
     }
 
-    if(mCounter == 100)
+    // increase the step width
+    if(mCounter == 50)
     {
         if(mIterationSteps < 5)
         {
-            mDt *= 2.f;
+            mDt *= 1.1f;
             printf("increase the dt to %11.7f\n", mDt);
         }
-
-        if(mDt > 15)
-        {
-            mDt = 12.8;
-        }
-        mIterationSteps = 0;
         
+        mIterationSteps = 0;
         mCounter = 0;
     }
 
