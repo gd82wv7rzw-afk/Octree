@@ -807,7 +807,7 @@ void MetalGravity::run(Gui::GuiParameter* parameters)
         auto endTime = std::chrono::steady_clock::now();
         auto time = std::chrono::duration<double, std::micro>(endTime - startTime).count() * 1e-6;
 
-        //printf("Step: %7i\tdt:%14.7lf\tTotalTime: %14.7lfs\n", mStep, dt(), time);
+        printf("Step: %7i\tdt:%14.7lf\tTotalTime: %14.7lfs\n", mStep, dt(), time);
 
         ++mStep;
     }  

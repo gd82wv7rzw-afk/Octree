@@ -1,0 +1,11 @@
+build/
+cmake-build-*/
+.git/
+DerivedData/
+*.metallib
+*.air
+*.o
+*.a
+*.dylib
+*.app
+*.xcarchive

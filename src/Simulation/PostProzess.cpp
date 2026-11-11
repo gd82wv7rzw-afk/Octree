@@ -30,7 +30,7 @@ float3 PostProzess::eKin(Buffer* data)
     ekin /= data->size();
     epot /= data->size();
 
-    printf("Ekin: %17.5f min: %17.5f max: %17.5f Epot:%17.5f\n", ekin, min, max, epot);
+    //printf("Ekin: %17.5f min: %17.5f max: %17.5f Epot:%17.5f\n", ekin, min, max, epot);
 
     return {ekin, min, max};
 }

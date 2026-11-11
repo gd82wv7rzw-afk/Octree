@@ -26,7 +26,7 @@ float4 grad(const thread float3& x)
 {
     auto r2 = dot(x,x) + 1e-10f;
 
-    if (r2 < 0.1) r2 = 0.1f;
+    //if (r2 < 0.1) r2 = 0.1f;
     //auto r  = sqrt(r2);
     
     // U = 4 (1 / r^2 - 1 / r)
@@ -35,7 +35,7 @@ float4 grad(const thread float3& x)
     auto invR  = rsqrt(r2);             // 1/r
     auto invR3 = invR * invR * invR;    // 1/r^3
     auto invR4 = invR3 * invR;          // 1/r^4
-    auto invR6 = invR3 * invR;
+    //auto invR6 = invR3 * invR;
 
     auto factor = (-2.f * invR4 + invR3) * 4;
     auto ePot   = (1.f / r2 - invR) * 4;
