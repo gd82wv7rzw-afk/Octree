@@ -15,6 +15,9 @@ kernel void updateCenterOfMass(
     if (branch.value.order != order) return;
     
     float3 centerOfMass = float3(0.0f);
+    float  maxVel       = 0.f;
+    float  maxAcc       = 0.f;
+
     int n = 0;
     for (int o = 0; o < 8; ++o)
     {
@@ -23,14 +26,21 @@ kernel void updateCenterOfMass(
         bool isBranch = branch.childIds[o] & BranchBit;
         auto idx      = branch.childIds[o] & IndexMask;
 
-        float3 r = isBranch ? branches[idx].value.com : atoms[idx].value.pos;
-        auto  sz = branch.childSizes[o];
+        float3 r  = isBranch ? branches[idx].value.com : atoms[idx].value.pos;
+        float vel = isBranch ? branches[idx].value.maxVel : length(atoms[idx].value.vel);
+        float acc = isBranch ? branches[idx].value.maxAcc : length(atoms[idx].value.acc);
+        auto  sz  = branch.childSizes[o];
+        
+        maxAcc = max(maxAcc, acc);
+        maxVel = max(maxVel, vel);
         
         centerOfMass += r * sz;
 
         n += sz;
     }
 
-    branch.value.com = centerOfMass / n;
+    branch.value.com    = centerOfMass / n;
+    branch.value.maxVel = maxVel;
+    branch.value.maxAcc = maxAcc;
 }
 //----------------------------------------------------------------------------------------------------------------------

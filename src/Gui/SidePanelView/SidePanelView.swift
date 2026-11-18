@@ -15,8 +15,8 @@ struct SidePanelView: View
     @State private var hasValidSetup = false
     @State private var sphereResolution = 4
     @State private var sphereScale = 2.0
-    @State private var delta_t: Double = 0.0004
-    @State private var temperature: Double = 0.999
+    @State private var delta_t: Double = 0.001
+    @State private var temperature: Double = 1.0
     @State private var lightColor: Color = .white
     @State private var materialColor: Color = .red
     @State private var lightIntensity = 1.0

@@ -61,14 +61,14 @@ void MetalGravity::generateRandomConfiguration(int nAtoms, float freelength)
 
         while (true)
         {
-            float x = std::normal_distribution<float>(0.f, mBox.x / 2)(mRandom);
-            float y = std::normal_distribution<float>(0.f, mBox.y / 2)(mRandom);
-            float z = std::normal_distribution<float>(0.f, mBox.z / 2)(mRandom);
+            float x = std::normal_distribution<float>(0.f, mBox.x / 10)(mRandom);
+            float y = std::normal_distribution<float>(0.f, mBox.y / 10)(mRandom);
+            float z = std::normal_distribution<float>(0.f, mBox.z / 10)(mRandom);
 
             float3 p{x, y, z};
 
             float min2 = std::min(std::min(mBox.x, mBox.y), mBox.z );
-            min2 /= 2;
+            min2 /= 10;
             min2 *= min2;
 
             if (dot(p,p) < min2) 
@@ -97,9 +97,7 @@ void MetalGravity::generateRandomConfiguration(int nAtoms, float freelength)
             std::normal_distribution<float>(0.0f, 1.f)(mRandom)
         }; 
 
-        v1 = simd::cross(float3{0.f, 0.f, 1.f}, point) * mNatoms;
-
-        v1 /= mNatoms;
+        v1 = simd::cross(float3{0.f, 0.f, 1.f}, point) * 0.001f;
 
         Atom atom{point, v1, {0.f,0.f,0.f}};
 
@@ -577,7 +575,7 @@ void MetalGravity::step()
 
     //PROFILE_METAL_CALL("updateCenterOfMass", updateCenterOfMass(encoder);)
     updateCenterOfMass(encoder);
-
+    
     int step = 0;
     for (; step < maxStepps; ++step)
     {
@@ -615,31 +613,6 @@ void MetalGravity::step()
 
         oldError = maxError;
     }
-
-    if (step >  mIterationSteps) mIterationSteps = step;
-    ++mCounter;
-
-    // securety step control
-    if(step > 10)
-    {
-        mDt /= 2;
-        printf("degrease the dt to %11.7f\n", mDt);
-    }
-
-    // increase the step width
-    if(mCounter == 50)
-    {
-        if(mIterationSteps < 5)
-        {
-            mDt *= 1.1f;
-            printf("increase the dt to %11.7f\n", mDt);
-        }
-        
-        mIterationSteps = 0;
-        mCounter = 0;
-    }
-
-    mParameters->simulationSettings.dt.store(mDt, std::memory_order_relaxed);
    
     //PROFILE_METAL_CALL("integrateVelosseties", integrateVelosseties(encoder);)
     integrateVelosseties(encoder, temperature);
@@ -672,6 +645,41 @@ void MetalGravity::step()
 
     //printf("%-30s Time: %14.7lfs\n", "reinsertAtoms", time);
 
+    // time step control
+    {
+        if (step >  mIterationSteps) mIterationSteps = step;
+        ++mCounter;
+ 
+        // securety step control
+        if(step > 10)
+        {
+            mDt /= 2;
+            printf("degrease the dt to %11.7f\n", mDt);
+            mCounter = 0;
+        }
+        
+        if(mCounter == 100)
+        {
+            auto root = mTree.root().self().value();
+            const float maxAcceleration = root.maxAcc;
+            const float maxVelosety     = root.maxVel;
+            const float maxDs = 1.0;
+
+            float nextDt = std::min
+            (
+                maxDs * 2 /sqrt(maxAcceleration + 1),
+                maxDs     / maxVelosety
+            );
+ 
+            nextDt = std::clamp(nextDt, 1e-6f, maxDs*2);
+
+            mCounter = 0;
+            
+            mDt = 0.5f * mDt + 0.5f * nextDt;
+        }
+
+        mParameters->simulationSettings.dt.store(mDt, std::memory_order_relaxed);
+    }
 }
 //----------------------------------------------------------------------------------------------------------------------
 
